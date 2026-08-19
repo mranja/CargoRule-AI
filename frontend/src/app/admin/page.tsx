@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { IconAdmin, IconDocManage, IconUpload } from '@/components/common/Icons';
+import { IconDocManage, IconUpload } from '@/components/common/Icons';
 
 export default function AdminPage() {
   return (
