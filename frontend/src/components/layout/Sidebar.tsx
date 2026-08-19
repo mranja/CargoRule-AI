@@ -10,8 +10,9 @@ import {
   IconLogout,
   renderIconByName,
 } from '../common/Icons';
+import { Avatar } from '../ui/Avatar';
 
-const mainNavItems: NavItem[] = [
+export const mainNavItems: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', iconName: 'dashboard' },
   { name: 'Ask CargoRule', href: '/ask', iconName: 'ask', badge: 'AI' },
   { name: 'Documents', href: '/documents', iconName: 'documents' },
@@ -20,7 +21,7 @@ const mainNavItems: NavItem[] = [
   { name: 'Carriers', href: '/carriers', iconName: 'carriers' },
 ];
 
-const adminNavItems: NavItem[] = [
+export const adminNavItems: NavItem[] = [
   { name: 'Admin Dashboard', href: '/admin', iconName: 'admin', isAdmin: true },
   { name: 'Upload Documents', href: '/admin/upload', iconName: 'upload', isAdmin: true },
   { name: 'Document Management', href: '/admin/documents', iconName: 'docmanage', isAdmin: true },
@@ -88,7 +89,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
           {/* Logo Header */}
           <div className="flex h-16 items-center px-6 border-b border-zinc-100 dark:border-zinc-800/60">
             <Link href="/dashboard" className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-xs">
                 <IconBox size={20} />
               </div>
               <div className="flex flex-col">
@@ -112,7 +113,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
             <div>
               <div className="px-3 mb-2 text-[10px] font-semibold tracking-wider text-zinc-400 uppercase flex items-center justify-between">
                 <span>Admin Controls</span>
-                <span className="text-[9px] bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 px-1.5 py-0.5 rounded font-bold">ADMIN</span>
+                <span className="text-[9px] bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 px-1.5 py-0.5 rounded font-bold">
+                  ADMIN
+                </span>
               </div>
               {renderNavList(adminNavItems)}
             </div>
@@ -122,9 +125,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
           <div className="p-4 border-t border-zinc-100 dark:border-zinc-800/60 bg-zinc-50/50 dark:bg-zinc-950/30">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3 overflow-hidden">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-zinc-700 font-semibold text-xs dark:bg-zinc-700 dark:text-zinc-200">
-                  OP
-                </div>
+                <Avatar size="sm" initials="OP" name="Operations User" />
                 <div className="flex flex-col truncate">
                   <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">
                     Operations User
@@ -138,10 +139,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
                 type="button"
                 title="Logout"
                 aria-label="Logout"
-                className="p-1.5 text-zinc-400 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-200 rounded-lg hover:bg-zinc-200/60 dark:hover:bg-zinc-800 transition-colors"
-                onClick={() => {
-                  // Ready for auth logout handler
-                }}
+                className="p-1.5 text-zinc-400 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-200 rounded-lg hover:bg-zinc-200/60 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
               >
                 <IconLogout size={16} />
               </button>
@@ -150,7 +148,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
         </div>
       </aside>
 
-      {/* Mobile & Tablet Responsive Backdrop Overlay */}
+      {/* Mobile Backdrop Overlay */}
       {isMobileOpen && (
         <div
           className="fixed inset-0 z-40 bg-zinc-900/60 backdrop-blur-xs lg:hidden transition-opacity"
@@ -175,6 +173,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
             </span>
           </div>
           <button
+            type="button"
             onClick={onCloseMobile}
             className="p-1.5 rounded-lg text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
             aria-label="Close Menu"
@@ -194,7 +193,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
           <div>
             <div className="px-3 mb-2 text-[10px] font-semibold tracking-wider text-zinc-400 uppercase flex items-center justify-between">
               <span>Admin Controls</span>
-              <span className="text-[9px] bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 px-1.5 py-0.5 rounded font-bold">ADMIN</span>
+              <span className="text-[9px] bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 px-1.5 py-0.5 rounded font-bold">
+                ADMIN
+              </span>
             </div>
             {renderNavList(adminNavItems)}
           </div>
@@ -203,9 +204,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
         <div className="p-4 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/30">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 overflow-hidden">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-zinc-700 font-semibold text-xs dark:bg-zinc-700 dark:text-zinc-200">
-                OP
-              </div>
+              <Avatar size="sm" initials="OP" name="Operations User" />
               <div className="flex flex-col truncate">
                 <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">
                   Operations User
@@ -219,7 +218,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
               type="button"
               title="Logout"
               aria-label="Logout"
-              className="p-1.5 text-zinc-400 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-200 rounded-lg hover:bg-zinc-200/60 dark:hover:bg-zinc-800 transition-colors"
+              className="p-1.5 text-zinc-400 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-200 rounded-lg hover:bg-zinc-200/60 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
             >
               <IconLogout size={16} />
             </button>

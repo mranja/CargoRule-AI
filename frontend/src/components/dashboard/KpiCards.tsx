@@ -1,5 +1,5 @@
 import React from 'react';
-import { KpiCard } from '../common/KpiCard';
+import { MetricCard } from './MetricCard';
 
 interface KpiCardsProps {
   totalDocuments?: number;
@@ -16,28 +16,28 @@ export const KpiCards: React.FC<KpiCardsProps> = ({
 }) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-      <KpiCard
+      <MetricCard
         label="Total Documents"
         value={totalDocuments !== undefined ? totalDocuments : '--'}
         subtext="Indexed in vector DB"
         iconName="documents"
         isPlaceholder={totalDocuments === undefined}
       />
-      <KpiCard
+      <MetricCard
         label="Countries Covered"
         value={totalCountries !== undefined ? totalCountries : '--'}
         subtext="Active destinations"
         iconName="countries"
         isPlaceholder={totalCountries === undefined}
       />
-      <KpiCard
+      <MetricCard
         label="Carriers Covered"
         value={totalCarriers !== undefined ? totalCarriers : '--'}
         subtext="Loaded shipping agreements"
         iconName="carriers"
         isPlaceholder={totalCarriers === undefined}
       />
-      <KpiCard
+      <MetricCard
         label="Recent Queries"
         value={totalQueries !== undefined ? totalQueries : '--'}
         subtext="RAG searches performed"

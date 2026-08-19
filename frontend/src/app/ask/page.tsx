@@ -1,23 +1,26 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { EmptyState } from '@/components/common/EmptyState';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { IconAsk, IconFilter, IconSparkles } from '@/components/common/Icons';
 
 function AskContent() {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
   const [query, setQuery] = useState(initialQuery);
+  const [prevInitialQuery, setPrevInitialQuery] = useState(initialQuery);
   const [selectedCountry, setSelectedCountry] = useState('all');
   const [selectedCarrier, setSelectedCarrier] = useState('all');
 
-  useEffect(() => {
-    if (initialQuery) {
-      setQuery(initialQuery);
-    }
-  }, [initialQuery]);
+  if (initialQuery !== prevInitialQuery) {
+    setPrevInitialQuery(initialQuery);
+    setQuery(initialQuery);
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,18 +28,24 @@ function AskContent() {
 
   return (
     <div className="space-y-6">
+      <PageHeader
+        title="Ask CargoRule AI"
+        badge="RAG POWERED"
+        description="Search customs regulations, carrier agreements, and shipping restrictions using grounded AI context."
+      />
+
       {/* Ask Interface Container */}
-      <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
+      <Card className="p-6">
         <div className="flex items-center gap-2 mb-4">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-600 text-white">
             <IconAsk size={20} />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-              Ask CargoRule AI
-            </h2>
+            <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+              Logistics Compliance Assistant
+            </h3>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              RAG-based question answering for customs regulations, carrier agreements, and shipping restrictions.
+              Type your shipment parameters below to search indexed policies.
             </p>
           </div>
         </div>
@@ -80,20 +89,20 @@ function AskContent() {
               placeholder="e.g. Can I ship lithium batteries from India to Germany using DHL?"
               className="flex-1 rounded-xl border border-zinc-200 bg-zinc-50/50 px-4 py-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:placeholder:text-zinc-500"
             />
-            <button
+            <Button
               type="submit"
               disabled={!query.trim()}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-xs font-semibold text-white shadow-xs hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              leftIcon={<IconSparkles size={16} />}
+              size="lg"
             >
-              <IconSparkles size={16} />
-              <span>Search Compliance</span>
-            </button>
+              Search Compliance
+            </Button>
           </div>
         </form>
-      </div>
+      </Card>
 
       {/* Answer & Sources Result Section (Empty State when no response) */}
-      <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
+      <Card className="p-6">
         <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
           AI Response & Grounded Sources
         </h3>
@@ -102,7 +111,7 @@ function AskContent() {
           description="Type a question above to retrieve RAG-backed compliance answers, verified customs rules, and carrier agreement citations."
           icon={<IconSparkles size={24} />}
         />
-      </div>
+      </Card>
     </div>
   );
 }
