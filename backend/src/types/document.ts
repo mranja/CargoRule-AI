@@ -265,6 +265,17 @@ export interface DocumentChunkRequest {
   metadata: DocumentMetadata;
 }
 
+export type SupportedDocumentType = "pdf" | "docx" | "txt";
+
+export interface ExtractedDocument {
+  text: string;
+  metadata: {
+    fileName: string;
+    fileType: SupportedDocumentType;
+    pageCount?: number;
+  };
+}
+
 /**
  * DocumentMetadata Example
  *
