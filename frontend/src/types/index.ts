@@ -39,3 +39,26 @@ export interface DocumentRecord {
   carrier: string;
   uploadedAt: string;
 }
+
+export interface UploadMetadata {
+  documentName: string;
+  country: string;
+  carrier: string;
+  documentType: string;
+  effectiveDate: string;
+  expiryDate: string;
+  version: string;
+}
+
+export interface UploadFormErrors {
+  file?: string;
+  documentName?: string;
+  country?: string;
+  carrier?: string;
+  documentType?: string;
+  effectiveDate?: string;
+  expiryDate?: string;
+  version?: string;
+}
+
+export type UploadStatus = 'idle' | 'validating' | 'uploading' | 'success' | 'error';
