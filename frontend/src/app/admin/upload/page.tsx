@@ -1,119 +1,247 @@
 'use client';
 
 import React, { useState } from 'react';
+import { UploadFormErrors, UploadMetadata, UploadStatus } from '@/types';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
-import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { IconUpload } from '@/components/common/Icons';
+import { Alert } from '@/components/ui/Alert';
+import { FileDropzone } from '@/components/documents/FileDropzone';
+import { FilePreview } from '@/components/documents/FilePreview';
+import { DocumentMetadataForm } from '@/components/documents/DocumentMetadataForm';
+import { UploadSummary } from '@/components/documents/UploadSummary';
+import { UploadGuidelines } from '@/components/documents/UploadGuidelines';
+import { IconUpload, IconSparkles } from '@/components/common/Icons';
+
+const initialMetadata: UploadMetadata = {
+  documentName: '',
+  country: 'Global',
+  carrier: 'All',
+  documentType: 'Customs Regulation',
+  effectiveDate: '',
+  expiryDate: '',
+  version: '1.0',
+};
+
+const MAX_FILE_SIZE_MB = 25;
+const ACCEPTED_EXTENSIONS = ['pdf', 'docx', 'txt'];
 
 export default function UploadPage() {
-  const [docTitle, setDocTitle] = useState('');
-  const [docType, setDocType] = useState('customs');
-  const [country, setCountry] = useState('');
-  const [carrier, setCarrier] = useState('');
-  const [isUploading, setIsUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [metadata, setMetadata] = useState<UploadMetadata>(initialMetadata);
+  const [errors, setErrors] = useState<UploadFormErrors>({});
+  const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
+  const [statusMessage, setStatusMessage] = useState<string>('');
+
+  const handleFileSelect = (file: File) => {
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+    const sizeMB = file.size / (1024 * 1024);
+
+    const newErrors: UploadFormErrors = {};
+
+    if (!ACCEPTED_EXTENSIONS.includes(ext)) {
+      newErrors.file = `Unsupported file format (.${ext}). Supported formats: PDF, DOCX, TXT.`;
+      setErrors(newErrors);
+      return;
+    }
+
+    if (sizeMB > MAX_FILE_SIZE_MB) {
+      newErrors.file = `File size (${sizeMB.toFixed(1)}MB) exceeds the maximum limit of ${MAX_FILE_SIZE_MB}MB.`;
+      setErrors(newErrors);
+      return;
+    }
+
+    setSelectedFile(file);
+    setErrors({});
+    setUploadStatus('idle');
+
+    // Auto-populate document name if empty
+    if (!metadata.documentName) {
+      const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+      setMetadata((prev) => ({
+        ...prev,
+        documentName: cleanName,
+      }));
+    }
+  };
+
+  const handleFileRemove = () => {
+    setSelectedFile(null);
+    setErrors({});
+    setUploadStatus('idle');
+  };
+
+  const handleMetadataChange = (updated: Partial<UploadMetadata>) => {
+    setMetadata((prev) => ({ ...prev, ...updated }));
+    // Clear field-specific error
+    const fields = Object.keys(updated) as (keyof UploadFormErrors)[];
+    if (fields.length > 0) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        fields.forEach((f) => delete next[f]);
+        return next;
+      });
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: UploadFormErrors = {};
+
+    if (!selectedFile) {
+      newErrors.file = 'Please select a logistics document file to upload.';
+    }
+
+    if (!metadata.documentName.trim()) {
+      newErrors.documentName = 'Document name is required.';
+    }
+
+    if (!metadata.documentType) {
+      newErrors.documentType = 'Please select a document type.';
+    }
+
+    if (metadata.effectiveDate && metadata.expiryDate) {
+      const start = new Date(metadata.effectiveDate);
+      const end = new Date(metadata.expiryDate);
+      if (end < start) {
+        newErrors.expiryDate = 'Expiry date cannot be earlier than the effective date.';
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsUploading(true);
+
+    if (!validateForm()) {
+      setUploadStatus('validating');
+      return;
+    }
+
+    setUploadStatus('uploading');
+    setStatusMessage('Preparing document metadata payload...');
+
+    // Ready for future API integration (POST /documents/upload)
     setTimeout(() => {
-      setIsUploading(false);
-    }, 1000);
+      // Simulate state update ready for real backend hookup
+      setUploadStatus('idle');
+    }, 1200);
   };
 
   return (
     <DashboardLayout>
-      <div className="max-w-3xl space-y-6">
+      <div className="space-y-6">
         <PageHeader
-          title="Upload Compliance Document"
+          title="Upload Documents"
           badge="ADMIN FEATURE"
-          description="Add logistics policies, country rules, or carrier service agreements to the CargoRule RAG vector store."
+          description="Upload customs regulations, shipping policies, and carrier agreements to index them in the CargoRule RAG vector database."
         />
 
-        <Card className="p-6 sm:p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Document File Drag and Drop Placeholder Area */}
-            <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-zinc-200 bg-zinc-50/50 p-8 text-center dark:border-zinc-800 dark:bg-zinc-950/50 transition-colors hover:border-blue-400">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 mb-3">
-                <IconUpload size={24} />
-              </div>
-              <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 mb-1">
-                Drag & drop policy file or click to browse
-              </p>
-              <p className="text-[11px] text-zinc-400 dark:text-zinc-500">
-                Supports PDF, DOCX, TXT (Max 25MB)
-              </p>
-              <input
-                type="file"
-                className="hidden"
-                id="file-upload-input"
-                accept=".pdf,.docx,.txt"
+        {/* Guidelines Card */}
+        <UploadGuidelines />
+
+        {/* Status Alert Banners */}
+        {uploadStatus === 'success' && (
+          <Alert
+            variant="success"
+            title="Upload Complete"
+            icon={<IconSparkles size={18} />}
+          >
+            {statusMessage || 'Document successfully uploaded and queued for RAG vector indexing.'}
+          </Alert>
+        )}
+
+        {uploadStatus === 'error' && (
+          <Alert
+            variant="danger"
+            title="Upload Failed"
+          >
+            {statusMessage || 'Failed to upload document. Please verify parameters and try again.'}
+          </Alert>
+        )}
+
+        {/* Main Upload Form Container */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <Card className="p-6 sm:p-8 space-y-6">
+            <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">
+              1. Document Selection
+            </h3>
+
+            {!selectedFile ? (
+              <FileDropzone
+                onFileSelect={handleFileSelect}
+                acceptedFormats={['PDF', 'DOCX', 'TXT']}
+                maxSizeMB={MAX_FILE_SIZE_MB}
+                disabled={uploadStatus === 'uploading'}
+                error={errors.file}
               />
-              <label
-                htmlFor="file-upload-input"
-                className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3.5 py-2 text-xs font-medium text-zinc-700 shadow-2xs hover:bg-zinc-50 cursor-pointer dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
-              >
-                Select File
-              </label>
-            </div>
-
-            {/* Document Metadata Inputs */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input
-                label="Document Title"
-                placeholder="e.g. Germany Import Guidelines 2026"
-                value={docTitle}
-                onChange={(e) => setDocTitle(e.target.value)}
+            ) : (
+              <FilePreview
+                file={selectedFile}
+                onRemove={handleFileRemove}
+                disabled={uploadStatus === 'uploading'}
               />
+            )}
 
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="doc-type"
-                  className="block text-xs font-medium text-zinc-700 dark:text-zinc-300"
-                >
-                  Document Type
-                </label>
-                <select
-                  id="doc-type"
-                  value={docType}
-                  onChange={(e) => setDocType(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs sm:text-sm text-zinc-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
-                >
-                  <option value="customs">Customs Regulations</option>
-                  <option value="carrier">Carrier Agreement</option>
-                  <option value="policy">Shipping Policy</option>
-                  <option value="restriction">Dangerous Goods Restriction</option>
-                </select>
-              </div>
+            <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 space-y-4">
+              <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">
+                2. Compliance Metadata
+              </h3>
 
-              <Input
-                label="Country (Optional)"
-                placeholder="e.g. Germany"
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-              />
-
-              <Input
-                label="Carrier (Optional)"
-                placeholder="e.g. DHL Express"
-                value={carrier}
-                onChange={(e) => setCarrier(e.target.value)}
+              <DocumentMetadataForm
+                metadata={metadata}
+                onChange={handleMetadataChange}
+                errors={errors}
+                disabled={uploadStatus === 'uploading'}
               />
             </div>
+          </Card>
 
-            <div className="flex justify-end gap-3 pt-2">
+          {/* Upload Pre-submission Summary */}
+          {selectedFile && (
+            <UploadSummary file={selectedFile} metadata={metadata} />
+          )}
+
+          {/* Form Actions */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="text-xs text-zinc-500 dark:text-zinc-400">
+              {selectedFile ? (
+                <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                  Ready to process: {selectedFile.name}
+                </span>
+              ) : (
+                <span>Please select a document file above to enable upload.</span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+              {selectedFile && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="md"
+                  onClick={handleFileRemove}
+                  disabled={uploadStatus === 'uploading'}
+                >
+                  Cancel
+                </Button>
+              )}
+
               <Button
                 type="submit"
-                isLoading={isUploading}
+                variant="primary"
+                size="md"
+                disabled={!selectedFile || uploadStatus === 'uploading'}
+                isLoading={uploadStatus === 'uploading'}
                 leftIcon={<IconUpload size={16} />}
               >
-                {isUploading ? 'Processing Document...' : 'Upload & Process'}
+                {uploadStatus === 'uploading' ? 'Uploading Document...' : 'Upload Document'}
               </Button>
             </div>
-          </form>
-        </Card>
+          </div>
+        </form>
       </div>
     </DashboardLayout>
   );
