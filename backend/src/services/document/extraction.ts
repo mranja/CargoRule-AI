@@ -4,17 +4,20 @@ import pdfParse from "pdf-parse";
 import mammoth from "mammoth";
 import { ExtractedDocument, SupportedDocumentType } from "../../types/document";
 
-function resolveDocumentType(filePath: string, fileType?: string): SupportedDocumentType {
-  const normalizedType = (fileType || path.extname(filePath).slice(1)).toLowerCase();
+function resolveDocumentType(fileName: string, fileType?: string): SupportedDocumentType {
+  const normalizedType = (fileType || path.extname(fileName).slice(1)).toLowerCase();
   if (normalizedType === "pdf" || normalizedType === "docx" || normalizedType === "txt") {
     return normalizedType;
   }
   throw new Error(`Unsupported document type: ${normalizedType || "unknown"}`);
 }
 
-export async function extractText(filePath: string, fileType?: string): Promise<ExtractedDocument> {
-  const resolvedType = resolveDocumentType(filePath, fileType);
-  const buffer = await fs.readFile(filePath);
+export async function extractTextFromBuffer(
+  buffer: Buffer,
+  fileName: string,
+  fileType?: string
+): Promise<ExtractedDocument> {
+  const resolvedType = resolveDocumentType(fileName, fileType);
   let text: string;
   let pageCount: number | undefined;
 
@@ -35,15 +38,20 @@ export async function extractText(filePath: string, fileType?: string): Promise<
   }
 
   if (!text.trim()) {
-    throw new Error(`No text could be extracted from ${path.basename(filePath)}`);
+    throw new Error(`No text could be extracted from ${path.basename(fileName)}`);
   }
 
   return {
     text,
     metadata: {
-      fileName: path.basename(filePath),
+      fileName: path.basename(fileName),
       fileType: resolvedType,
       ...(pageCount === undefined ? {} : { pageCount }),
     },
   };
+}
+
+export async function extractText(filePath: string, fileType?: string): Promise<ExtractedDocument> {
+  const buffer = await fs.readFile(filePath);
+  return extractTextFromBuffer(buffer, path.basename(filePath), fileType);
 }
