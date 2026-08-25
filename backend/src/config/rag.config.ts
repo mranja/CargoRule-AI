@@ -7,6 +7,21 @@
  * in production, but are defined here with sensible defaults.
  */
 
+import dotenv from "dotenv";
+import path from "path";
+
+dotenv.config();
+dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
+
+function resolveEmbeddingApiEndpoint(): string {
+  if (process.env.EMBEDDING_API_ENDPOINT) {
+    return process.env.EMBEDDING_API_ENDPOINT;
+  }
+
+  const baseUrl = (process.env.OPENAI_BASE_URL || "https://api.openai.com/v1").replace(/\/+$/, "");
+  return `${baseUrl}/embeddings`;
+}
+
 /**
  * Embedding Configuration
  *
@@ -46,12 +61,12 @@ export const EmbeddingConfig = {
   /**
    * API endpoint for embedding service.
    *
-   * If using OpenAI's API, this should be the OpenAI API endpoint.
-   * If using a self-hosted model, configure this to point to your service.
+   * Resolved from EMBEDDING_API_ENDPOINT, or OPENAI_BASE_URL + "/embeddings".
+   * Supports any OpenAI-compatible embeddings API.
    *
-   * @default OpenAI's default endpoint
+   * @default OpenAI's default embeddings endpoint
    */
-  apiEndpoint: process.env.EMBEDDING_API_ENDPOINT || "https://api.openai.com/v1/embeddings",
+  apiEndpoint: resolveEmbeddingApiEndpoint(),
 
   /**
    * API key for the embedding service.
