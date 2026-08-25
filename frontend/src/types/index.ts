@@ -62,3 +62,36 @@ export interface UploadFormErrors {
 }
 
 export type UploadStatus = 'idle' | 'validating' | 'uploading' | 'success' | 'error';
+
+export type ProcessingStepKey =
+  | 'UPLOADED'
+  | 'EXTRACTING'
+  | 'CHUNKING'
+  | 'EMBEDDING'
+  | 'INDEXING'
+  | 'COMPLETED'
+  | 'FAILED';
+
+export type ProcessingStepStatus = 'completed' | 'current' | 'upcoming' | 'failed';
+
+export interface ProcessingStep {
+  key: ProcessingStepKey;
+  label: string;
+  description: string;
+  status: ProcessingStepStatus;
+  timestamp?: string;
+  errorDetails?: string;
+}
+
+export interface DocumentProcessingStatus {
+  documentId: string;
+  documentName: string;
+  currentStep: ProcessingStepKey;
+  progressPercent: number;
+  isComplete: boolean;
+  isFailed: boolean;
+  steps: ProcessingStep[];
+  startedAt?: string;
+  completedAt?: string;
+  errorMessage?: string;
+}
