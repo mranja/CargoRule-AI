@@ -1,7 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { UploadFormErrors, UploadMetadata, UploadStatus } from '@/types';
+import {
+  DocumentProcessingStatus,
+  UploadFormErrors,
+  UploadMetadata,
+  UploadStatus,
+} from '@/types';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
@@ -12,7 +17,9 @@ import { FilePreview } from '@/components/documents/FilePreview';
 import { DocumentMetadataForm } from '@/components/documents/DocumentMetadataForm';
 import { UploadSummary } from '@/components/documents/UploadSummary';
 import { UploadGuidelines } from '@/components/documents/UploadGuidelines';
+import { ProcessingStatusStepper } from '@/components/documents/ProcessingStatusStepper';
 import { IconUpload, IconSparkles } from '@/components/common/Icons';
+import { useRouter } from 'next/navigation';
 
 const initialMetadata: UploadMetadata = {
   documentName: '',
@@ -28,11 +35,14 @@ const MAX_FILE_SIZE_MB = 25;
 const ACCEPTED_EXTENSIONS = ['pdf', 'docx', 'txt'];
 
 export default function UploadPage() {
+  const router = useRouter();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [metadata, setMetadata] = useState<UploadMetadata>(initialMetadata);
   const [errors, setErrors] = useState<UploadFormErrors>({});
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
   const [statusMessage, setStatusMessage] = useState<string>('');
+  const [activeProcessingStatus, setActiveProcessingStatus] =
+    useState<DocumentProcessingStatus | null>(null);
 
   const handleFileSelect = (file: File) => {
     const ext = file.name.split('.').pop()?.toLowerCase() || '';
@@ -70,11 +80,11 @@ export default function UploadPage() {
     setSelectedFile(null);
     setErrors({});
     setUploadStatus('idle');
+    setActiveProcessingStatus(null);
   };
 
   const handleMetadataChange = (updated: Partial<UploadMetadata>) => {
     setMetadata((prev) => ({ ...prev, ...updated }));
-    // Clear field-specific error
     const fields = Object.keys(updated) as (keyof UploadFormErrors)[];
     if (fields.length > 0) {
       setErrors((prev) => {
@@ -121,13 +131,12 @@ export default function UploadPage() {
     }
 
     setUploadStatus('uploading');
-    setStatusMessage('Preparing document metadata payload...');
+    setStatusMessage('Preparing document metadata payload for API dispatch...');
 
-    // Ready for future API integration (POST /documents/upload)
+    // Ready to be hooked up to backend API endpoint (POST /documents/upload)
     setTimeout(() => {
-      // Simulate state update ready for real backend hookup
       setUploadStatus('idle');
-    }, 1200);
+    }, 1000);
   };
 
   return (
@@ -139,27 +148,33 @@ export default function UploadPage() {
           description="Upload customs regulations, shipping policies, and carrier agreements to index them in the CargoRule RAG vector database."
         />
 
-        {/* Guidelines Card */}
+        {/* Guidelines Panel */}
         <UploadGuidelines />
 
         {/* Status Alert Banners */}
         {uploadStatus === 'success' && (
           <Alert
             variant="success"
-            title="Upload Complete"
+            title="Upload Submitted"
             icon={<IconSparkles size={18} />}
           >
-            {statusMessage || 'Document successfully uploaded and queued for RAG vector indexing.'}
+            {statusMessage || 'Document uploaded and queued for processing.'}
           </Alert>
         )}
 
         {uploadStatus === 'error' && (
-          <Alert
-            variant="danger"
-            title="Upload Failed"
-          >
+          <Alert variant="danger" title="Upload Failed">
             {statusMessage || 'Failed to upload document. Please verify parameters and try again.'}
           </Alert>
+        )}
+
+        {/* Active Processing Stepper Display (when active document processing status is present) */}
+        {activeProcessingStatus && (
+          <ProcessingStatusStepper
+            status={activeProcessingStatus}
+            onReset={handleFileRemove}
+            onViewDocuments={() => router.push('/admin/documents')}
+          />
         )}
 
         {/* Main Upload Form Container */}
