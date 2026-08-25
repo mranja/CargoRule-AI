@@ -95,3 +95,34 @@ export interface DocumentProcessingStatus {
   completedAt?: string;
   errorMessage?: string;
 }
+
+export interface AskQueryFilters {
+  country?: string;
+  carrier?: string;
+  documentType?: string;
+}
+
+export interface AskQueryPayload {
+  question: string;
+  filters?: AskQueryFilters;
+}
+
+export interface SourceCitation {
+  id: string;
+  documentTitle: string;
+  section?: string;
+  pageNumber?: number | string;
+  country?: string;
+  carrier?: string;
+  snippet?: string;
+  relevanceScore?: number;
+}
+
+export interface AskQueryResponse {
+  id: string;
+  question: string;
+  answer: string;
+  sources: SourceCitation[];
+  timestamp: string;
+  filtersUsed?: AskQueryFilters;
+}
