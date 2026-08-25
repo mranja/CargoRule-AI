@@ -5,9 +5,10 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc --noEmit",
-    "test": "npm run test:extraction && npm run test:pipeline",
+    "test": "npm run test:extraction && npm run test:pipeline && npm run test:embeddings",
     "test:extraction": "ts-node scripts/test-extraction.ts",
-    "test:pipeline": "ts-node scripts/test-pipeline.ts"
+    "test:pipeline": "ts-node scripts/test-pipeline.ts",
+    "test:embeddings": "ts-node scripts/test-embeddings.ts"
   },
   "keywords": [],
   "author": "",
