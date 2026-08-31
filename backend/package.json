@@ -5,12 +5,13 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc --noEmit",
-    "test": "npm run test:extraction && npm run test:pipeline && npm run test:embeddings && npm run test:query-embeddings && npm run test:retrieval",
+    "test": "npm run test:extraction && npm run test:pipeline && npm run test:embeddings && npm run test:query-embeddings && npm run test:retrieval && npm run test:llm",
     "test:extraction": "ts-node scripts/test-extraction.ts",
     "test:pipeline": "ts-node scripts/test-pipeline.ts",
     "test:embeddings": "ts-node scripts/test-embeddings.ts",
     "test:query-embeddings": "ts-node scripts/test-query-embeddings.ts",
-    "test:retrieval": "ts-node scripts/test-retrieval.ts"
+    "test:retrieval": "ts-node scripts/test-retrieval.ts",
+    "test:llm": "ts-node scripts/test-llm.ts"
   },
   "keywords": [],
   "author": "",

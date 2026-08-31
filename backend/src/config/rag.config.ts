@@ -22,6 +22,15 @@ function resolveEmbeddingApiEndpoint(): string {
   return `${baseUrl}/embeddings`;
 }
 
+function resolveLlmApiEndpoint(): string {
+  if (process.env.LLM_API_ENDPOINT) {
+    return process.env.LLM_API_ENDPOINT;
+  }
+
+  const baseUrl = (process.env.OPENAI_BASE_URL || "https://api.openai.com/v1").replace(/\/+$/, "");
+  return `${baseUrl}/chat/completions`;
+}
+
 /**
  * Embedding Configuration
  *
@@ -397,7 +406,7 @@ export const LLMConfig = {
    *
    * @default OpenAI's default endpoint
    */
-  apiEndpoint: process.env.LLM_API_ENDPOINT || "https://api.openai.com/v1/chat/completions",
+  apiEndpoint: resolveLlmApiEndpoint(),
 
   /**
    * API key for the LLM service.
