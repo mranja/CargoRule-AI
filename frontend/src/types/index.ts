@@ -126,3 +126,19 @@ export interface AskQueryResponse {
   timestamp: string;
   filtersUsed?: AskQueryFilters;
 }
+
+export interface ChatMessageItem {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+  sources?: SourceCitation[];
+  filters?: AskQueryFilters;
+  isError?: boolean;
+}
+
+export interface ChatSession {
+  id: string;
+  messages: ChatMessageItem[];
+  activeFilters: AskQueryFilters;
+}
