@@ -112,7 +112,7 @@ export async function executeRAG(
   query: string | RetrievalQuery,
   options: RAGExecutionOptions = {}
 ): Promise<RAGResult> {
-  const questionText = typeof query === "string" ? query : query.question;
+  const questionText = typeof query === "string" ? query : (query.question || "");
 
   // Step 1: Retrieval
   const retrievalResponse = await retrieveForQuery(query, {

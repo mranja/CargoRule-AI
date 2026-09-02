@@ -162,7 +162,15 @@ export interface RetrievalQuery {
    * Example:
    * "What documents are needed to ship lithium batteries from India to Germany?"
    */
-  question: string;
+  question?: string;
+
+  /**
+   * Pre-computed query embedding vector.
+   *
+   * If provided, vector search can be executed directly without invoking
+   * the embedding generation service.
+   */
+  queryVector?: number[];
 
   /**
    * Metadata filters for reducing search space.
@@ -194,6 +202,24 @@ export interface RetrievalQuery {
    */
   timestamp?: string;  // ISO 8601 datetime
 }
+
+/**
+ * Payload interface for incoming HTTP requests to retrieval API endpoints.
+ */
+export interface RetrievalApiRequest {
+  question?: string;
+  query?: string;
+  queryVector?: number[];
+  filters?: RetrievalFilters;
+  topK?: number;
+  parameters?: RetrievalParameters;
+  correlationId?: string;
+}
+
+/**
+ * Typed response interface for retrieval API endpoints.
+ */
+export type RetrievalApiResponse = RetrievalResponse;
 
 /**
  * A retrieved document chunk.

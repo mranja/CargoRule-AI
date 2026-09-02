@@ -33,6 +33,11 @@ function resolveTopK(requestedTopK?: number): number {
   return Math.max(min, Math.min(max, Math.floor(requestedTopK)));
 }
 
+export interface RetrieveChunksOptions {
+  vectorStore?: VectorStore;
+  similarityThreshold?: number | null;
+}
+
 /**
  * Retrieves the top-K most relevant document chunks for a given query vector,
  * applying optional metadata filters and similarity thresholds.
@@ -40,22 +45,32 @@ function resolveTopK(requestedTopK?: number): number {
  * @param queryVector - Dense vector representing the user query
  * @param filters - Optional metadata filters (e.g., country, carrier, documentType, dateRange)
  * @param topK - Maximum number of chunks to retrieve (bounded by config)
- * @param vectorStore - Vector database store instance (defaults to shared store)
+ * @param optionsOrStore - Optional options object or VectorStore instance (defaults to shared store)
  * @returns Array of retrieved chunks ranked by semantic relevance
  */
 export async function retrieveRelevantChunks(
   queryVector: number[],
   filters?: RetrievalFilters,
   topK?: number,
-  vectorStore: VectorStore = getDefaultVectorStore()
+  optionsOrStore?: RetrieveChunksOptions | VectorStore
 ): Promise<RetrievedChunk[]> {
   validateQueryVector(queryVector);
   const boundedTopK = resolveTopK(topK);
 
+  const vectorStore =
+    optionsOrStore && "search" in optionsOrStore
+      ? optionsOrStore
+      : optionsOrStore?.vectorStore || getDefaultVectorStore();
+
+  const similarityThreshold =
+    optionsOrStore && "similarityThreshold" in optionsOrStore && optionsOrStore.similarityThreshold !== undefined
+      ? optionsOrStore.similarityThreshold
+      : RetrievalConfig.similarityThreshold;
+
   const chunks = await vectorStore.search(queryVector, {
     topK: boundedTopK,
     filters,
-    similarityThreshold: RetrievalConfig.similarityThreshold,
+    similarityThreshold,
   });
 
   return chunks;
@@ -69,9 +84,9 @@ export interface RetrievalExecutionOptions {
 
 /**
  * Executes an end-to-end retrieval flow:
- * 1. Takes a text query and optional filters/parameters
- * 2. Generates query vector embedding
- * 3. Applies metadata filtering and searches vector store
+ * 1. Takes a text query or pre-computed vector and optional filters/parameters
+ * 2. Generates query vector embedding if string question is provided
+ * 3. Applies metadata filtering and searches vector store via retrieveRelevantChunks
  * 4. Produces a comprehensive RetrievalResponse with metrics
  */
 export async function retrieveForQuery(
@@ -84,12 +99,11 @@ export async function retrieveForQuery(
     options.correlationId ||
     generateCorrelationId();
 
-  const queryString = typeof query === "string" ? query : query.question;
   const filters = typeof query === "object" ? query.filters : undefined;
   const parameters = typeof query === "object" ? query.parameters : undefined;
-
   const vectorStore = options.vectorStore || getDefaultVectorStore();
 
+  let queryString = "";
   try {
     const totalChunksAvailable = await vectorStore.count();
 
@@ -97,10 +111,22 @@ export async function retrieveForQuery(
     const totalChunksSearched = await vectorStore.countFiltered(filters);
     const filteringTimeMs = Date.now() - filterStartTime;
 
-    // Generate query embedding
-    const queryVector = await generateQueryEmbedding(queryString, options.embeddingClient);
+    // Resolve or generate query vector
+    let queryVector: number[];
+    if (typeof query === "string") {
+      queryString = query;
+      queryVector = await generateQueryEmbedding(queryString, options.embeddingClient);
+    } else if (query.queryVector && query.queryVector.length > 0) {
+      queryVector = query.queryVector;
+      queryString = query.question || "";
+    } else if (query.question) {
+      queryString = query.question;
+      queryVector = await generateQueryEmbedding(queryString, options.embeddingClient);
+    } else {
+      throw new Error("Either question or queryVector must be provided");
+    }
 
-    // Vector similarity search
+    // Vector similarity search delegating to retrieveRelevantChunks
     const vectorSearchStartTime = Date.now();
     const boundedTopK = resolveTopK(parameters?.topK);
     const similarityThreshold =
@@ -108,9 +134,8 @@ export async function retrieveForQuery(
         ? parameters.similarityThreshold
         : RetrievalConfig.similarityThreshold;
 
-    const retrievedChunks = await vectorStore.search(queryVector, {
-      topK: boundedTopK,
-      filters,
+    const retrievedChunks = await retrieveRelevantChunks(queryVector, filters, boundedTopK, {
+      vectorStore,
       similarityThreshold,
     });
     const vectorSearchTimeMs = Date.now() - vectorSearchStartTime;
