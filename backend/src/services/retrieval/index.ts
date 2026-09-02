@@ -2,7 +2,7 @@ export {
   retrieveRelevantChunks,
   retrieveForQuery,
 } from "./retrieval";
-export type { RetrievalExecutionOptions } from "./retrieval";
+export type { RetrievalExecutionOptions, RetrieveChunksOptions } from "./retrieval";
 
 export {
   createInMemoryVectorStore,
