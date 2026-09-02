@@ -4,15 +4,19 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "ts-node src/server.ts",
+    "start": "ts-node src/server.ts",
     "build": "tsc --noEmit",
-    "test": "npm run test:extraction && npm run test:pipeline && npm run test:embeddings && npm run test:query-embeddings && npm run test:retrieval && npm run test:retrieval-api && npm run test:llm",
+    "test": "npm run test:extraction && npm run test:pipeline && npm run test:embeddings && npm run test:query-embeddings && npm run test:retrieval && npm run test:retrieval-api && npm run test:llm && npm run test:rag-pipeline && npm run test:full-api",
     "test:extraction": "ts-node scripts/test-extraction.ts",
     "test:pipeline": "ts-node scripts/test-pipeline.ts",
     "test:embeddings": "ts-node scripts/test-embeddings.ts",
     "test:query-embeddings": "ts-node scripts/test-query-embeddings.ts",
     "test:retrieval": "ts-node scripts/test-retrieval.ts",
     "test:retrieval-api": "ts-node scripts/test-retrieval-api.ts",
-    "test:llm": "ts-node scripts/test-llm.ts"
+    "test:llm": "ts-node scripts/test-llm.ts",
+    "test:rag-pipeline": "ts-node scripts/test-complete-rag-pipeline.ts",
+    "test:full-api": "ts-node scripts/test-full-api-integration.ts"
   },
   "keywords": [],
   "author": "",

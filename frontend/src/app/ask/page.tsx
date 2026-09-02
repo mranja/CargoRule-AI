@@ -5,6 +5,11 @@ import { useSearchParams } from 'next/navigation';
 import { AskQueryFilters, ChatMessageItem } from '@/types';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { AskForm } from '@/components/ask/AskForm';
+import { SuggestedQuestions } from '@/components/ask/SuggestedQuestions';
+import { AnswerDisplay } from '@/components/ask/AnswerDisplay';
+import { Alert } from '@/components/ui/Alert';
+import { askQuestion } from '@/services/api';
 import { ChatThread } from '@/components/ask/ChatThread';
 import { ChatInputBar } from '@/components/ask/ChatInputBar';
 
@@ -20,6 +25,8 @@ function AskContent() {
     documentType: 'all',
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [queryResponse, setQueryResponse] = useState<AskQueryResponse | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessageItem[]>([]);
 
   // Sync state synchronously if searchParams change
@@ -39,6 +46,25 @@ function AskContent() {
   const handleClearThread = () => {
     setMessages([]);
     setQuestion('');
+    setFilters({ country: 'all', carrier: 'all', documentType: 'all' });
+    setQueryResponse(null);
+    setErrorMessage(null);
+  };
+
+  const handleSubmit = async (payload: AskQueryPayload) => {
+    setIsLoading(true);
+    setErrorMessage(null);
+    try {
+      const res = await askQuestion(payload);
+      setQueryResponse(res);
+    } catch (err) {
+      console.error('RAG query error:', err);
+      setErrorMessage(
+        err instanceof Error
+          ? err.message
+          : 'Failed to retrieve compliance answer. Ensure backend service is reachable.'
+      );
+    } finally {
   };
 
   const handleSubmit = () => {
@@ -70,7 +96,7 @@ function AskContent() {
 
     setTimeout(() => {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -82,6 +108,18 @@ function AskContent() {
           description="Ask questions about customs regulations, shipping policies, and carrier agreements."
         />
 
+      {/* Error Alert Display */}
+      {errorMessage && (
+        <Alert variant="danger" title="Query Execution Failed">
+          {errorMessage}
+        </Alert>
+      )}
+
+      {/* Suggested Questions Section */}
+      <SuggestedQuestions
+        onSelectQuestion={handleSelectSuggestedQuestion}
+        disabled={isLoading}
+      />
         {/* Scrollable Chat Message Thread */}
         <ChatThread
           messages={messages}

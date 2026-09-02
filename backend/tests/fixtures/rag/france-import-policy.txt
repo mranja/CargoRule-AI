@@ -1,0 +1,20 @@
+TEST FIXTURE: FRANCE DIRECTION GENERALE DES DOUANES IMPORT POLICY
+DOCUMENT CLASSIFICATION: SYNTHETIC TEST FIXTURE (NOT REAL REGULATION)
+DOCUMENT ID: doc_france_import_003
+COUNTRY: France
+DOCUMENT TYPE: Customs Regulation
+EFFECTIVE DATE: 2026-03-01
+VERSION: v1.8
+
+SECTION 1: FRENCH CUSTOMS IMPORTATION RULES
+This guideline establishes specific regulatory and sanitary documentation rules for cross-border cargo consignments arriving at French sea ports and Charles de Gaulle / Orly airport customs hubs.
+
+SECTION 2: MANDATORY FRENCH IMPORT DOCUMENTATION
+All shipments destined for French commercial distribution require:
+1. DELTA-G Electronic Declaration: The mandatory customs pre-lodgement declaration lodged through the French Customs computer system.
+2. Commercial Invoice in French or English: Must include certified SIREN/SIRET French enterprise identifiers, EU VAT identification number, and declared statistical value in Euros.
+3. EUR.1 Movement Certificate: Required for qualifying preferential origin shipments originating in partner territories.
+4. Triman Eco-Emballages Recycling Symbol Compliance Certificate: Required for all retail packaged merchandise entering France to satisfy mandatory EPR (Extended Producer Responsibility) packaging laws.
+
+SECTION 3: RESTRICTED AND CONTROLLED SUBSTANCES
+Agricultural and food consignments require prior PHYTO (Phytosanitary) certificate validation through the TRACES-NT portal prior to physical customs clearance.

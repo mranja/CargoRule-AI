@@ -22,6 +22,13 @@ app.use(errorHandler);
 const PORT = parseInt(process.env.PORT || "3001", 10);
 
 if (require.main === module) {
+  // Initialize default document store data
+  import("./services/document/documentStore").then(({ documentStore }) => {
+    documentStore.initialize().catch((err) => {
+      console.warn("Failed to initialize document store:", err);
+    });
+  });
+
   app.listen(PORT, () => {
     console.log(`CargoRule AI backend listening on port ${PORT}`);
   });
