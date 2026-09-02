@@ -1,0 +1,23 @@
+TEST FIXTURE: GERMANY CUSTOMS REGULATION
+DOCUMENT CLASSIFICATION: SYNTHETIC TEST FIXTURE (NOT REAL REGULATION)
+DOCUMENT ID: doc_germany_customs_001
+COUNTRY: Germany
+DOCUMENT TYPE: Customs Regulation
+EFFECTIVE DATE: 2026-01-01
+VERSION: v2.4
+
+SECTION 1: OVERVIEW AND SCOPE
+This document outlines standard customs clearance requirements for commercial import shipments entering the Federal Republic of Germany through major air and ocean ports of entry.
+
+SECTION 2: MANDATORY IMPORT DOCUMENTATION
+All standard commercial shipments entering Germany must include the following primary documentation:
+1. Commercial Invoice: Must detail the full buyer and seller addresses, EORI number, description of goods in German or English, HS tariff codes (minimum 6 digits), unit values, currency, and Incoterms 2020.
+2. Packing List: Must accompany all multi-package shipments and state gross weight, net weight, package dimensions, and exact carton counts.
+3. Customs Declaration (Atlas System / Form 0747): Electronic declaration submitted prior to cargo arrival.
+4. Certificate of Origin: Required for preferential duty rate claims under applicable bilateral trade agreements.
+
+SECTION 3: TARIFF AND TAX ASSESSMENT
+Import duty rates are calculated based on the CIF (Cost, Insurance, and Freight) value. Value-Added Tax (Einfuhrumsatzsteuer) of 19% standard rate or 7% reduced rate applies to qualifying goods upon entry.
+
+SECTION 4: COMPLIANCE CONTACT AND AUDIT
+Customs audits require documentation retention for a minimum of 10 years following customs clearance.

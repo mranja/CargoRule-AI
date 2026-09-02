@@ -1,0 +1,22 @@
+TEST FIXTURE: DHL EXPRESS LITHIUM BATTERY SHIPPING POLICY
+DOCUMENT CLASSIFICATION: SYNTHETIC TEST FIXTURE (NOT REAL CARRIER POLICY)
+DOCUMENT ID: doc_dhl_lithium_002
+CARRIER: DHL
+DOCUMENT TYPE: Shipping Policy
+EFFECTIVE DATE: 2025-06-01
+VERSION: v3.1
+
+SECTION 1: CARRIER POLICY SUMMARY
+DHL Express enforces strict safety protocols for the acceptance, handling, and air carriage of standalone and equipment-contained lithium ion and lithium metal cells and batteries.
+
+SECTION 2: PACKAGING REQUIREMENTS
+1. Inner Packaging: Each cell or battery must be individually enclosed in inner packaging to prevent short circuits and accidental activation.
+2. Outer Packaging: UN specification packaging (UN 3480 / UN 3481) certified for Section IA and IB shipments is mandatory. Strong rigid outer packaging is required for Section II.
+3. Cushioning: Absorbent, non-combustible cushioning material must fill all void space inside the outer package.
+4. Gross Weight Limits: Maximum net quantity per package on passenger aircraft must not exceed 5 kg for Section II.
+
+SECTION 3: MANDATORY DOCUMENTATION AND LABELS
+1. Lithium Battery Mark (UN 3480 / UN 3481): Must be affixed with the correct UN number and emergency contact telephone number.
+2. Shipper's Declaration for Dangerous Goods (DGD): Required for all Section IA and IB dangerous goods shipments.
+3. Safety Data Sheet (SDS): A valid 16-section SDS dated within the last 24 months must be attached to the shipping paperwork.
+4. Battery Declaration Form: Signed shipper confirmation certifying battery wattage does not exceed 100 Wh for cells or 160 Wh for batteries under Section II exceptions.

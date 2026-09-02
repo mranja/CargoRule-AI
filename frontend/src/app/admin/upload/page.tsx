@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import {
   DocumentProcessingStatus,
+  ProcessingStep,
   UploadFormErrors,
   UploadMetadata,
   UploadStatus,
@@ -20,6 +21,7 @@ import { UploadGuidelines } from '@/components/documents/UploadGuidelines';
 import { ProcessingStatusStepper } from '@/components/documents/ProcessingStatusStepper';
 import { IconUpload, IconSparkles } from '@/components/common/Icons';
 import { useRouter } from 'next/navigation';
+import { uploadDocument } from '@/services/api';
 
 const initialMetadata: UploadMetadata = {
   documentName: '',
@@ -81,6 +83,7 @@ export default function UploadPage() {
     setErrors({});
     setUploadStatus('idle');
     setActiveProcessingStatus(null);
+    setStatusMessage('');
   };
 
   const handleMetadataChange = (updated: Partial<UploadMetadata>) => {
@@ -122,21 +125,139 @@ export default function UploadPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
+    if (!validateForm() || !selectedFile) {
       setUploadStatus('validating');
       return;
     }
 
     setUploadStatus('uploading');
-    setStatusMessage('Preparing document metadata payload for API dispatch...');
+    setStatusMessage('Uploading and indexing document into RAG vector store...');
 
-    // Ready to be hooked up to backend API endpoint (POST /documents/upload)
-    setTimeout(() => {
-      setUploadStatus('idle');
-    }, 1000);
+    const initialSteps: ProcessingStep[] = [
+      {
+        key: 'UPLOADED',
+        label: 'File Upload',
+        description: 'Document uploaded to server',
+        status: 'completed',
+        timestamp: new Date().toLocaleTimeString(),
+      },
+      {
+        key: 'EXTRACTING',
+        label: 'Text Extraction',
+        description: 'Extracting content and structure',
+        status: 'current',
+      },
+      {
+        key: 'CHUNKING',
+        label: 'Section Chunking',
+        description: 'Segmenting into compliance chunks',
+        status: 'upcoming',
+      },
+      {
+        key: 'EMBEDDING',
+        label: 'Vector Embedding',
+        description: 'Generating dense vector representations',
+        status: 'upcoming',
+      },
+      {
+        key: 'INDEXING',
+        label: 'Vector Database Index',
+        description: 'Indexing in vector store for search',
+        status: 'upcoming',
+      },
+    ];
+
+    setActiveProcessingStatus({
+      documentId: 'doc_pending',
+      documentName: metadata.documentName,
+      currentStep: 'EXTRACTING',
+      progressPercent: 30,
+      isComplete: false,
+      isFailed: false,
+      steps: initialSteps,
+    });
+
+    try {
+      const res = await uploadDocument(selectedFile, metadata);
+
+      // Complete all steps
+      const completedSteps: ProcessingStep[] = [
+        {
+          key: 'UPLOADED',
+          label: 'File Upload',
+          description: 'Document uploaded to server',
+          status: 'completed',
+          timestamp: new Date().toLocaleTimeString(),
+        },
+        {
+          key: 'EXTRACTING',
+          label: 'Text Extraction',
+          description: 'Text cleaned and normalized',
+          status: 'completed',
+          timestamp: new Date().toLocaleTimeString(),
+        },
+        {
+          key: 'CHUNKING',
+          label: 'Section Chunking',
+          description: 'Segmented with overlap & metadata',
+          status: 'completed',
+          timestamp: new Date().toLocaleTimeString(),
+        },
+        {
+          key: 'EMBEDDING',
+          label: 'Vector Embedding',
+          description: 'Embedded with OpenAI-compatible model',
+          status: 'completed',
+          timestamp: new Date().toLocaleTimeString(),
+        },
+        {
+          key: 'INDEXING',
+          label: 'Vector Database Index',
+          description: 'Indexed in vector store with filters',
+          status: 'completed',
+          timestamp: new Date().toLocaleTimeString(),
+        },
+      ];
+
+      setActiveProcessingStatus({
+        documentId: res.documentId || 'doc_indexed',
+        documentName: metadata.documentName,
+        currentStep: 'COMPLETED',
+        progressPercent: 100,
+        isComplete: true,
+        isFailed: false,
+        steps: completedSteps,
+      });
+
+      setUploadStatus('success');
+      setStatusMessage(
+        res.message ||
+          'Document uploaded, chunked, embedded, and indexed in vector store successfully!'
+      );
+    } catch (err) {
+      console.error('Upload failed:', err);
+      const errMsg =
+        err instanceof Error ? err.message : 'Upload and indexing failed.';
+      setUploadStatus('error');
+      setStatusMessage(errMsg);
+
+      setActiveProcessingStatus((prev) =>
+        prev
+          ? {
+              ...prev,
+              currentStep: 'FAILED',
+              isFailed: true,
+              errorMessage: errMsg,
+              steps: prev.steps.map((s) =>
+                s.status === 'current' ? { ...s, status: 'failed' } : s
+              ),
+            }
+          : null
+      );
+    }
   };
 
   return (
@@ -155,10 +276,10 @@ export default function UploadPage() {
         {uploadStatus === 'success' && (
           <Alert
             variant="success"
-            title="Upload Submitted"
+            title="Upload Complete"
             icon={<IconSparkles size={18} />}
           >
-            {statusMessage || 'Document uploaded and queued for processing.'}
+            {statusMessage || 'Document uploaded and indexed successfully.'}
           </Alert>
         )}
 

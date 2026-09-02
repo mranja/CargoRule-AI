@@ -18,6 +18,7 @@ export interface VectorStore {
   search(queryVector: number[], options?: VectorStoreSearchOptions): Promise<RetrievedChunk[]>;
   count(): Promise<number>;
   countFiltered(filters?: RetrievalFilters): Promise<number>;
+  deleteByDocumentId(documentId: string): Promise<number>;
   clear(): Promise<void>;
 }
 
@@ -174,6 +175,17 @@ export function createInMemoryVectorStore(initialRecords: VectorStoreRecord[] = 
       let count = 0;
       for (const record of records.values()) {
         if (matchesFilters(record.chunk.metadata, filters)) {
+          count += 1;
+        }
+      }
+      return count;
+    },
+
+    async deleteByDocumentId(documentId: string): Promise<number> {
+      let count = 0;
+      for (const [id, record] of records.entries()) {
+        if (record.chunk.documentId === documentId) {
+          records.delete(id);
           count += 1;
         }
       }

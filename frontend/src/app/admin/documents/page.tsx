@@ -1,8 +1,35 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { DocumentOverviewSection } from '@/components/dashboard/DocumentOverviewSection';
+import { getDocuments } from '@/services/api';
+import { DocumentRecord } from '@/types';
 
 export default function AdminDocumentsPage() {
+  const router = useRouter();
+  const [documents, setDocuments] = useState<DocumentRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadDocs() {
+      try {
+        const docs = await getDocuments();
+        if (mounted) setDocuments(docs);
+      } catch (err) {
+        console.warn('Failed to load documents:', err);
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    }
+    loadDocs();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -18,7 +45,10 @@ export default function AdminDocumentsPage() {
           </p>
         </div>
 
-        <DocumentOverviewSection />
+        <DocumentOverviewSection
+          documents={documents}
+          onUploadClick={() => router.push('/admin/upload')}
+        />
       </div>
     </DashboardLayout>
   );

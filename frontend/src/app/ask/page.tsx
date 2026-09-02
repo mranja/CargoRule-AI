@@ -8,6 +8,8 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { AskForm } from '@/components/ask/AskForm';
 import { SuggestedQuestions } from '@/components/ask/SuggestedQuestions';
 import { AnswerDisplay } from '@/components/ask/AnswerDisplay';
+import { Alert } from '@/components/ui/Alert';
+import { askQuestion } from '@/services/api';
 
 function AskContent() {
   const searchParams = useSearchParams();
@@ -22,6 +24,7 @@ function AskContent() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [queryResponse, setQueryResponse] = useState<AskQueryResponse | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Sync state synchronously if searchParams change
   if (initialParamQuery !== prevParamQuery) {
@@ -41,17 +44,25 @@ function AskContent() {
     setQuestion('');
     setFilters({ country: 'all', carrier: 'all', documentType: 'all' });
     setQueryResponse(null);
+    setErrorMessage(null);
   };
 
-  const handleSubmit = (payload: AskQueryPayload) => {
+  const handleSubmit = async (payload: AskQueryPayload) => {
     setIsLoading(true);
-    // Prepared for real backend RAG API dispatch (POST /ask or POST /query)
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Dispatching compliance query payload to backend API:', payload);
-    }
-    setTimeout(() => {
+    setErrorMessage(null);
+    try {
+      const res = await askQuestion(payload);
+      setQueryResponse(res);
+    } catch (err) {
+      console.error('RAG query error:', err);
+      setErrorMessage(
+        err instanceof Error
+          ? err.message
+          : 'Failed to retrieve compliance answer. Ensure backend service is reachable.'
+      );
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -61,6 +72,13 @@ function AskContent() {
         badge="RAG POWERED"
         description="Ask questions about customs regulations, shipping policies, and carrier agreements."
       />
+
+      {/* Error Alert Display */}
+      {errorMessage && (
+        <Alert variant="danger" title="Query Execution Failed">
+          {errorMessage}
+        </Alert>
+      )}
 
       {/* Suggested Questions Section */}
       <SuggestedQuestions
