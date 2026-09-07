@@ -96,6 +96,12 @@ export interface DocumentProcessingStatus {
   errorMessage?: string;
 }
 
+export interface CountryOption {
+  code: string;
+  name: string;
+  region?: string;
+}
+
 export interface AskQueryFilters {
   country?: string;
   carrier?: string;
