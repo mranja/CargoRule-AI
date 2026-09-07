@@ -1,6 +1,7 @@
 import { cosineSimilarity } from "../document/embedding";
 import { DocumentChunk, DocumentMetadata, Embedding } from "../../types/document";
 import { RetrievalFilters, RetrievedChunk } from "../../types/retrieval";
+import { normalizeCountry, normalizeCountryFilters } from "../../utils/country";
 
 export interface VectorStoreSearchOptions {
   topK?: number;
@@ -37,12 +38,14 @@ export function matchesFilters(
     return false;
   }
 
-  // Country filter
+  // Country filter (normalized comparison)
   if (filters.country && filters.country.length > 0) {
-    const chunkCountry = (metadata.country || "").trim().toLowerCase();
-    const filterCountries = filters.country.map((c) => c.trim().toLowerCase());
-    if (!chunkCountry || !filterCountries.includes(chunkCountry)) {
-      return false;
+    const filterCountries = normalizeCountryFilters(filters.country);
+    if (filterCountries && filterCountries.length > 0) {
+      const chunkCountry = normalizeCountry(metadata.country);
+      if (!chunkCountry || !filterCountries.includes(chunkCountry)) {
+        return false;
+      }
     }
   }
 

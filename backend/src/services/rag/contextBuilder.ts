@@ -51,6 +51,10 @@ export function buildRetrievalContext(chunks: RetrievedChunk[]): RetrievalContex
       section: meta?.section,
       pageNumber: meta?.pageNumber,
       relevanceScore: chunk.relevanceScore,
+      country: meta?.country,
+      carrier: meta?.carrier,
+      chunkId: chunk.id,
+      snippet: chunk.content.length > 200 ? `${chunk.content.substring(0, 200)}...` : chunk.content,
     });
   });
 

@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { executeRAG } from "../services/rag/answerGeneration";
 import { queryHistoryStore } from "../services/rag/queryHistoryStore";
+import { normalizeCountry } from "../utils/country";
 
 export class RAGController {
   public static async ask(req: Request, res: Response): Promise<void> {
@@ -27,8 +28,9 @@ export class RAGController {
     try {
       // Map filters if provided and not "all"
       const mappedFilters: Record<string, string[]> = {};
-      if (filters?.country && filters.country.toLowerCase() !== "all") {
-        mappedFilters.country = [filters.country];
+      const normalizedCountry = normalizeCountry(filters?.country);
+      if (normalizedCountry) {
+        mappedFilters.country = [normalizedCountry];
       }
       if (filters?.carrier && filters.carrier.toLowerCase() !== "all") {
         mappedFilters.carrier = [filters.carrier];
@@ -59,7 +61,7 @@ export class RAGController {
         id: queryId,
         question: question.trim(),
         answer: ragResult.answer,
-        country: filters?.country || "Global",
+        country: normalizedCountry,
         carrier: filters?.carrier || "All",
         documentType: filters?.documentType,
         date: new Date().toLocaleDateString("en-US", {

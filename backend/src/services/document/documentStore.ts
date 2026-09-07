@@ -6,13 +6,14 @@ import { cleanText } from "./cleaning";
 import { chunkDocument } from "./chunking";
 import { extractTextFromBuffer } from "./extraction";
 import { SAMPLE_DOCUMENTS } from "../../../tests/fixtures/rag";
+import { normalizeCountry } from "../../utils/country";
 
 export interface DocumentRecord {
   id: string;
   title: string;
   status: "indexed" | "processing" | "error";
   type: string;
-  country: string;
+  country?: string;
   carrier: string;
   uploadedAt: string;
   effectiveDate?: string;
@@ -81,13 +82,14 @@ class DocumentStoreManager {
   ): Promise<DocumentRecord> {
     const documentId = input.documentId || `doc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const now = new Date().toISOString();
+    const normalizedCountry = normalizeCountry(input.country);
 
     const record: DocumentRecord = {
       id: documentId,
       title: input.documentName,
       status: "processing",
       type: input.documentType || "Customs Regulation",
-      country: input.country || "Global",
+      country: normalizedCountry,
       carrier: input.carrier || "All",
       uploadedAt: now,
       effectiveDate: input.effectiveDate,
@@ -125,7 +127,7 @@ class DocumentStoreManager {
       // 3. Document Chunking
       const metadata: DocumentMetadata = {
         documentName: input.documentName,
-        country: input.country,
+        country: normalizedCountry,
         carrier: input.carrier,
         documentType: input.documentType,
         effectiveDate: input.effectiveDate,
@@ -198,7 +200,7 @@ class DocumentStoreManager {
     const carriers = new Set<string>();
 
     for (const d of indexedDocs) {
-      if (d.country && d.country !== "Global") countries.add(d.country);
+      if (d.country) countries.add(d.country);
       if (d.carrier && d.carrier !== "All") carriers.add(d.carrier);
     }
 
