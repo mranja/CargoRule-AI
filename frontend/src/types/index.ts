@@ -24,7 +24,7 @@ export interface KpiItem {
 export interface QueryRecord {
   id: string;
   question: string;
-  country: string;
+  country?: string;
   carrier: string;
   date: string;
   status: 'completed' | 'processing' | 'failed';
@@ -35,14 +35,14 @@ export interface DocumentRecord {
   title: string;
   status: 'indexed' | 'processing' | 'error';
   type: string;
-  country: string;
+  country?: string;
   carrier: string;
   uploadedAt: string;
 }
 
 export interface UploadMetadata {
   documentName: string;
-  country: string;
+  country?: string;
   carrier: string;
   documentType: string;
   effectiveDate: string;

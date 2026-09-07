@@ -60,8 +60,9 @@ export class StatsController {
       const map = new Map<string, number>();
 
       for (const d of docs) {
-        const country = d.country || "Global";
-        map.set(country, (map.get(country) ?? 0) + 1);
+        if (d.country) {
+          map.set(d.country, (map.get(d.country) ?? 0) + 1);
+        }
       }
 
       const countries = Array.from(map.entries()).map(([country, count]) => ({

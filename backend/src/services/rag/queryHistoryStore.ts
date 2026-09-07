@@ -2,7 +2,7 @@ export interface QueryRecord {
   id: string;
   question: string;
   answer: string;
-  country: string;
+  country?: string;
   carrier: string;
   documentType?: string;
   date: string;

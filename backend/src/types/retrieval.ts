@@ -448,6 +448,10 @@ export interface RetrievalContextForLLM {
     section?: string;
     pageNumber?: number;
     relevanceScore: number;
+    country?: string;
+    carrier?: string;
+    chunkId?: string;
+    snippet?: string;
   }>;
 
   /**
