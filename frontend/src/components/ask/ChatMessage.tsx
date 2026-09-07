@@ -3,12 +3,11 @@
 import React, { useState } from 'react';
 import { ChatMessageItem } from '@/types';
 import { Badge } from '../ui/Badge';
-import { SourceCard } from './SourceCard';
+import { SourceList } from '../query/SourceList';
 import {
   IconAsk,
   IconCheck,
   IconCopy,
-  IconSparkles,
   IconThumbsDown,
   IconThumbsUp,
   IconUser,
@@ -90,18 +89,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
 
           {/* Grounded Sources Section */}
           {message.sources && message.sources.length > 0 && (
-            <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 space-y-2.5">
-              <div className="flex items-center gap-1.5 text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                <IconSparkles size={12} className="text-blue-600 dark:text-blue-400" />
-                <span>Sources Cited ({message.sources.length})</span>
-              </div>
-
-              <div className="grid grid-cols-1 gap-2.5">
-                {message.sources.map((src) => (
-                  <SourceCard key={src.id} source={src} />
-                ))}
-              </div>
-            </div>
+            <SourceList sources={message.sources} title="Sources Cited" className="pt-2 border-t border-zinc-100 dark:border-zinc-800" />
           )}
 
           {/* Action Toolbar */}

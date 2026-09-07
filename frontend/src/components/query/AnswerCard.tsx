@@ -6,7 +6,7 @@ import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Alert } from '../ui/Alert';
 import { EmptyState } from '../ui/EmptyState';
-import { SourceCard } from '../ask/SourceCard';
+import { SourceList } from './SourceList';
 import {
   IconAsk,
   IconCheck,
@@ -161,18 +161,7 @@ export const AnswerCard: React.FC<AnswerCardProps> = ({
 
       {/* Grounded Source Documents */}
       {response.sources && response.sources.length > 0 && (
-        <div className="space-y-3 pt-2">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">
-            <IconSparkles size={14} className="text-blue-600 dark:text-blue-400" />
-            <span>Grounded Source Documents ({response.sources.length})</span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {response.sources.map((src) => (
-              <SourceCard key={src.id} source={src} />
-            ))}
-          </div>
-        </div>
+        <SourceList sources={response.sources} className="pt-2" />
       )}
 
       {/* Footer Actions Toolbar */}

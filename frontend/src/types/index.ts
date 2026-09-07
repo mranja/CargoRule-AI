@@ -110,10 +110,15 @@ export interface AskQueryPayload {
 export interface SourceCitation {
   id: string;
   documentTitle: string;
+  documentId?: string;
+  documentType?: string;
   section?: string;
   pageNumber?: number | string;
   country?: string;
   carrier?: string;
+  version?: string;
+  effectiveDate?: string;
+  expiryDate?: string;
   snippet?: string;
   relevanceScore?: number;
 }
