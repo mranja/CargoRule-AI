@@ -25,7 +25,7 @@ export interface QueryRecord {
   id: string;
   question: string;
   country?: string;
-  carrier: string;
+  carrier?: string;
   date: string;
   status: 'completed' | 'processing' | 'failed';
 }
@@ -36,14 +36,15 @@ export interface DocumentRecord {
   status: 'indexed' | 'processing' | 'error';
   type: string;
   country?: string;
-  carrier: string;
+  carrier?: string;
   uploadedAt: string;
+  updatedAt?: string;
 }
 
 export interface UploadMetadata {
   documentName: string;
   country?: string;
-  carrier: string;
+  carrier?: string;
   documentType: string;
   effectiveDate: string;
   expiryDate: string;
@@ -109,6 +110,7 @@ export interface AskQueryPayload {
 
 export interface SourceCitation {
   id: string;
+  documentId?: string;
   documentTitle: string;
   section?: string;
   pageNumber?: number | string;

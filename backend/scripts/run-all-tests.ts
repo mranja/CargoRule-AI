@@ -12,6 +12,7 @@ const testScripts = [
   "scripts/test-complete-rag-pipeline.ts",
   "scripts/test-full-api-integration.ts",
   "scripts/test-country-metadata.ts",
+  "scripts/test-document-carrier-integration.ts",
 ];
 
 console.log("==================================================");

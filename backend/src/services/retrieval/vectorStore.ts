@@ -2,6 +2,7 @@ import { cosineSimilarity } from "../document/embedding";
 import { DocumentChunk, DocumentMetadata, Embedding } from "../../types/document";
 import { RetrievalFilters, RetrievedChunk } from "../../types/retrieval";
 import { normalizeCountry, normalizeCountryFilters } from "../../utils/country";
+import { normalizeCarrier, normalizeCarrierFilters } from "../../utils/carrier";
 
 export interface VectorStoreSearchOptions {
   topK?: number;
@@ -19,6 +20,7 @@ export interface VectorStore {
   search(queryVector: number[], options?: VectorStoreSearchOptions): Promise<RetrievedChunk[]>;
   count(): Promise<number>;
   countFiltered(filters?: RetrievalFilters): Promise<number>;
+  updateMetadataByDocumentId(documentId: string, metadata: Partial<DocumentMetadata>): Promise<number>;
   deleteByDocumentId(documentId: string): Promise<number>;
   clear(): Promise<void>;
 }
@@ -49,12 +51,14 @@ export function matchesFilters(
     }
   }
 
-  // Carrier filter
+  // Carrier filter (normalized comparison)
   if (filters.carrier && filters.carrier.length > 0) {
-    const chunkCarrier = (metadata.carrier || "").trim().toLowerCase();
-    const filterCarriers = filters.carrier.map((c) => c.trim().toLowerCase());
-    if (!chunkCarrier || !filterCarriers.includes(chunkCarrier)) {
-      return false;
+    const filterCarriers = normalizeCarrierFilters(filters.carrier);
+    if (filterCarriers && filterCarriers.length > 0) {
+      const chunkCarrier = normalizeCarrier(metadata.carrier);
+      if (!chunkCarrier || !filterCarriers.includes(chunkCarrier)) {
+        return false;
+      }
     }
   }
 
@@ -178,6 +182,26 @@ export function createInMemoryVectorStore(initialRecords: VectorStoreRecord[] = 
       let count = 0;
       for (const record of records.values()) {
         if (matchesFilters(record.chunk.metadata, filters)) {
+          count += 1;
+        }
+      }
+      return count;
+    },
+
+    async updateMetadataByDocumentId(
+      documentId: string,
+      metadata: Partial<DocumentMetadata>
+    ): Promise<number> {
+      let count = 0;
+      for (const record of records.values()) {
+        if (record.chunk.documentId === documentId) {
+          record.chunk.metadata = {
+            ...record.chunk.metadata,
+            ...metadata,
+          };
+          if (metadata.documentName) {
+            record.chunk.metadata.documentName = metadata.documentName;
+          }
           count += 1;
         }
       }

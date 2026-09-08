@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { executeRAG } from "../services/rag/answerGeneration";
 import { queryHistoryStore } from "../services/rag/queryHistoryStore";
 import { normalizeCountry } from "../utils/country";
+import { normalizeCarrier } from "../utils/carrier";
 
 export class RAGController {
   public static async ask(req: Request, res: Response): Promise<void> {
@@ -32,8 +33,9 @@ export class RAGController {
       if (normalizedCountry) {
         mappedFilters.country = [normalizedCountry];
       }
-      if (filters?.carrier && filters.carrier.toLowerCase() !== "all") {
-        mappedFilters.carrier = [filters.carrier];
+      const normalizedCarrier = normalizeCarrier(filters?.carrier);
+      if (normalizedCarrier) {
+        mappedFilters.carrier = [normalizedCarrier];
       }
       if (filters?.documentType && filters.documentType.toLowerCase() !== "all") {
         mappedFilters.documentType = [filters.documentType];
@@ -47,6 +49,7 @@ export class RAGController {
       // Format sources from retrieved chunks for rich frontend display
       const formattedSources = ragResult.retrievalResponse.retrievedChunks.map((chunk, index) => ({
         id: chunk.id || `src-${index}`,
+        documentId: chunk.documentId,
         documentTitle: chunk.metadata.documentName,
         section: chunk.metadata.section,
         pageNumber: chunk.metadata.pageNumber,
@@ -62,7 +65,7 @@ export class RAGController {
         question: question.trim(),
         answer: ragResult.answer,
         country: normalizedCountry,
-        carrier: filters?.carrier || "All",
+        carrier: normalizedCarrier,
         documentType: filters?.documentType,
         date: new Date().toLocaleDateString("en-US", {
           month: "short",

@@ -17,7 +17,8 @@
     "test:llm": "node node_modules\\ts-node\\dist\\bin.js scripts\\test-llm.ts",
     "test:rag-pipeline": "node node_modules\\ts-node\\dist\\bin.js scripts\\test-complete-rag-pipeline.ts",
     "test:full-api": "node node_modules\\ts-node\\dist\\bin.js scripts\\test-full-api-integration.ts",
-    "test:country-metadata": "node node_modules\\ts-node\\dist\\bin.js scripts\\test-country-metadata.ts"
+    "test:country-metadata": "node node_modules\\ts-node\\dist\\bin.js scripts\\test-country-metadata.ts",
+    "test:document-carrier": "node node_modules\\ts-node\\dist\\bin.js scripts\\test-document-carrier-integration.ts"
   },
   "keywords": [],
   "author": "",

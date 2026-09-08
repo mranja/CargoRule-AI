@@ -108,15 +108,122 @@ export class DocumentController {
     }
   }
 
-  public static async delete(req: Request, res: Response): Promise<void> {
+  public static async update(req: Request, res: Response): Promise<void> {
     try {
-      const id = req.params.id as string;
-      const deleted = await documentStore.deleteDocument(id);
-      if (!deleted) {
+      const id = req.params.id;
+      if (!id || typeof id !== "string" || !id.trim()) {
+        res.status(400).json({ success: false, error: "Valid document ID is required" });
+        return;
+      }
+
+      if (!req.body || typeof req.body !== "object") {
+        res.status(400).json({ success: false, error: "Update payload must be a JSON object" });
+        return;
+      }
+
+      const {
+        documentName,
+        title,
+        country,
+        carrier,
+        documentType,
+        type,
+        effectiveDate,
+        expiryDate,
+        version,
+      } = req.body;
+
+      // Validate name/title if provided
+      if (documentName !== undefined && (typeof documentName !== "string" || !documentName.trim())) {
+        res.status(400).json({ success: false, error: "documentName must be a non-empty string" });
+        return;
+      }
+      if (title !== undefined && (typeof title !== "string" || !title.trim())) {
+        res.status(400).json({ success: false, error: "title must be a non-empty string" });
+        return;
+      }
+
+      // Validate documentType/type if provided
+      if (documentType !== undefined && (typeof documentType !== "string" || !documentType.trim())) {
+        res.status(400).json({ success: false, error: "documentType must be a non-empty string" });
+        return;
+      }
+      if (type !== undefined && (typeof type !== "string" || !type.trim())) {
+        res.status(400).json({ success: false, error: "type must be a non-empty string" });
+        return;
+      }
+
+      // Validate date formats
+      if (effectiveDate !== undefined && effectiveDate !== null && effectiveDate !== "") {
+        if (typeof effectiveDate !== "string" || isNaN(new Date(effectiveDate).getTime())) {
+          res.status(400).json({ success: false, error: "effectiveDate must be a valid date string" });
+          return;
+        }
+      }
+
+      if (expiryDate !== undefined && expiryDate !== null && expiryDate !== "") {
+        if (typeof expiryDate !== "string" || isNaN(new Date(expiryDate).getTime())) {
+          res.status(400).json({ success: false, error: "expiryDate must be a valid date string" });
+          return;
+        }
+      }
+
+      // Update in documentStore
+      const updated = await documentStore.updateDocument(id.trim(), {
+        documentName,
+        title,
+        country,
+        carrier,
+        documentType,
+        type,
+        effectiveDate,
+        expiryDate,
+        version,
+      });
+
+      if (!updated) {
         res.status(404).json({ success: false, error: "Document not found" });
         return;
       }
-      res.status(200).json({ success: true, message: "Document deleted successfully" });
+
+      res.status(200).json({
+        success: true,
+        message: "Document updated successfully",
+        document: updated,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to update document";
+      if (message.includes("Expiry date cannot be earlier")) {
+        res.status(400).json({ success: false, error: message });
+        return;
+      }
+      res.status(500).json({
+        success: false,
+        error: message,
+      });
+    }
+  }
+
+  public static async delete(req: Request, res: Response): Promise<void> {
+    try {
+      const id = req.params.id;
+      if (!id || typeof id !== "string" || !id.trim()) {
+        res.status(400).json({ success: false, error: "Valid document ID is required" });
+        return;
+      }
+
+      const result = await documentStore.deleteDocument(id.trim());
+      if (!result.success) {
+        res.status(404).json({ success: false, error: "Document not found" });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "Document deleted successfully",
+        id: id.trim(),
+        deletedChunks: result.deletedChunks,
+      });
     } catch (error) {
       res.status(500).json({
         success: false,
