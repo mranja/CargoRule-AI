@@ -128,6 +128,36 @@ export async function uploadDocument(
 }
 
 /**
+ * Updates document metadata and synchronizes vector store in backend.
+ */
+export async function updateDocument(
+  documentId: string,
+  metadata: Partial<UploadMetadata>
+): Promise<{ success: boolean; document?: DocumentRecord; message?: string }> {
+  const response = await fetch(`${API_BASE_URL}/documents/${documentId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(metadata),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData.error || `Failed to update document (HTTP ${response.status})`
+    );
+  }
+
+  const data = await response.json();
+  return {
+    success: true,
+    document: data.document,
+    message: data.message,
+  };
+}
+
+/**
  * Deletes a document and removes its vectors from the index.
  */
 export async function deleteDocument(documentId: string): Promise<boolean> {

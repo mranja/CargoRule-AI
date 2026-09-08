@@ -7,6 +7,7 @@ import { chunkDocument } from "./chunking";
 import { extractTextFromBuffer } from "./extraction";
 import { SAMPLE_DOCUMENTS } from "../../../tests/fixtures/rag";
 import { normalizeCountry } from "../../utils/country";
+import { normalizeCarrier } from "../../utils/carrier";
 
 export interface DocumentRecord {
   id: string;
@@ -14,8 +15,9 @@ export interface DocumentRecord {
   status: "indexed" | "processing" | "error";
   type: string;
   country?: string;
-  carrier: string;
+  carrier?: string;
   uploadedAt: string;
+  updatedAt?: string;
   effectiveDate?: string;
   expiryDate?: string;
   version?: string;
@@ -35,6 +37,18 @@ export interface IngestDocumentInput {
   country?: string;
   carrier?: string;
   documentType?: string;
+  effectiveDate?: string;
+  expiryDate?: string;
+  version?: string;
+}
+
+export interface UpdateDocumentInput {
+  documentName?: string;
+  title?: string;
+  country?: string | null;
+  carrier?: string | null;
+  documentType?: string;
+  type?: string;
   effectiveDate?: string;
   expiryDate?: string;
   version?: string;
@@ -83,6 +97,7 @@ class DocumentStoreManager {
     const documentId = input.documentId || `doc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const now = new Date().toISOString();
     const normalizedCountry = normalizeCountry(input.country);
+    const normalizedCarrier = normalizeCarrier(input.carrier);
 
     const record: DocumentRecord = {
       id: documentId,
@@ -90,7 +105,7 @@ class DocumentStoreManager {
       status: "processing",
       type: input.documentType || "Customs Regulation",
       country: normalizedCountry,
-      carrier: input.carrier || "All",
+      carrier: normalizedCarrier,
       uploadedAt: now,
       effectiveDate: input.effectiveDate,
       expiryDate: input.expiryDate,
@@ -128,7 +143,7 @@ class DocumentStoreManager {
       const metadata: DocumentMetadata = {
         documentName: input.documentName,
         country: normalizedCountry,
-        carrier: input.carrier,
+        carrier: normalizedCarrier,
         documentType: input.documentType,
         effectiveDate: input.effectiveDate,
         version: input.version || "1.0",
@@ -178,17 +193,96 @@ class DocumentStoreManager {
     return this.documentChunks.get(id) || [];
   }
 
+  public async updateDocument(
+    id: string,
+    updates: UpdateDocumentInput,
+    vectorStore: VectorStore = getDefaultVectorStore()
+  ): Promise<DocumentRecord | null> {
+    const existing = this.documents.get(id);
+    if (!existing) {
+      return null;
+    }
+
+    // Determine updated values
+    const effectiveDate =
+      updates.effectiveDate !== undefined ? updates.effectiveDate : existing.effectiveDate;
+    const expiryDate =
+      updates.expiryDate !== undefined ? updates.expiryDate : existing.expiryDate;
+
+    // Validate date sequence if both dates exist
+    if (effectiveDate && expiryDate) {
+      const start = new Date(effectiveDate).getTime();
+      const end = new Date(expiryDate).getTime();
+      if (!isNaN(start) && !isNaN(end) && end < start) {
+        throw new Error("Expiry date cannot be earlier than effective date");
+      }
+    }
+
+    const title =
+      updates.title?.trim() || updates.documentName?.trim() || existing.title;
+    const country =
+      updates.country !== undefined ? normalizeCountry(updates.country) : existing.country;
+    const carrier =
+      updates.carrier !== undefined ? normalizeCarrier(updates.carrier) : existing.carrier;
+    const type =
+      updates.documentType?.trim() || updates.type?.trim() || existing.type;
+    const version =
+      updates.version?.trim() || existing.version;
+
+    // Update document record
+    existing.title = title;
+    existing.country = country;
+    existing.carrier = carrier;
+    existing.type = type;
+    existing.effectiveDate = effectiveDate;
+    existing.expiryDate = expiryDate;
+    existing.version = version;
+    existing.updatedAt = new Date().toISOString();
+
+    // Update in-memory documentChunks
+    const chunks = this.documentChunks.get(id) || [];
+    for (const chunk of chunks) {
+      chunk.metadata = {
+        ...chunk.metadata,
+        documentName: title,
+        country,
+        carrier,
+        documentType: type,
+        effectiveDate,
+        version,
+      };
+    }
+
+    // Synchronize vector store metadata
+    await vectorStore.updateMetadataByDocumentId(id, {
+      documentName: title,
+      country,
+      carrier,
+      documentType: type,
+      effectiveDate,
+      version,
+    });
+
+    this.documents.set(id, existing);
+    return existing;
+  }
+
   public async deleteDocument(
     id: string,
     vectorStore: VectorStore = getDefaultVectorStore()
-  ): Promise<boolean> {
-    if (!this.documents.has(id)) return false;
+  ): Promise<{ success: boolean; deletedChunks: number }> {
+    if (!this.documents.has(id)) {
+      return { success: false, deletedChunks: 0 };
+    }
 
-    // Delete chunks from vector store
-    await vectorStore.deleteByDocumentId(id);
+    // Delete chunks from vector store first
+    const deletedChunks = await vectorStore.deleteByDocumentId(id);
+
+    // Delete from document maps
     this.documents.delete(id);
     this.documentChunks.delete(id);
-    return true;
+
+    return { success: true, deletedChunks };
   }
 
   public getStats() {
@@ -201,7 +295,7 @@ class DocumentStoreManager {
 
     for (const d of indexedDocs) {
       if (d.country) countries.add(d.country);
-      if (d.carrier && d.carrier !== "All") carriers.add(d.carrier);
+      if (d.carrier) carriers.add(d.carrier);
     }
 
     return {

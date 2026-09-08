@@ -5,9 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { AskQueryFilters, ChatMessageItem } from '@/types';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { AskForm } from '@/components/ask/AskForm';
 import { SuggestedQuestions } from '@/components/ask/SuggestedQuestions';
-import { AnswerDisplay } from '@/components/ask/AnswerDisplay';
 import { Alert } from '@/components/ui/Alert';
 import { askQuestion } from '@/services/api';
 import { ChatThread } from '@/components/ask/ChatThread';
@@ -25,7 +23,6 @@ function AskContent() {
     documentType: 'all',
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [queryResponse, setQueryResponse] = useState<AskQueryResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessageItem[]>([]);
 
@@ -47,27 +44,10 @@ function AskContent() {
     setMessages([]);
     setQuestion('');
     setFilters({ country: 'all', carrier: 'all', documentType: 'all' });
-    setQueryResponse(null);
     setErrorMessage(null);
   };
 
-  const handleSubmit = async (payload: AskQueryPayload) => {
-    setIsLoading(true);
-    setErrorMessage(null);
-    try {
-      const res = await askQuestion(payload);
-      setQueryResponse(res);
-    } catch (err) {
-      console.error('RAG query error:', err);
-      setErrorMessage(
-        err instanceof Error
-          ? err.message
-          : 'Failed to retrieve compliance answer. Ensure backend service is reachable.'
-      );
-    } finally {
-  };
-
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!question.trim() || isLoading) return;
 
     const userMessageText = question.trim();
@@ -85,16 +65,40 @@ function AskContent() {
     setMessages((prev) => [...prev, userMessage]);
     setQuestion('');
     setIsLoading(true);
+    setErrorMessage(null);
 
-    // Prepared for real backend RAG API dispatch (POST /ask or POST /query)
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Dispatching chat query payload to backend RAG API:', {
+    try {
+      const res = await askQuestion({
         question: userMessageText,
         filters: activeFilters,
       });
-    }
 
-    setTimeout(() => {
+      const assistantMessage: ChatMessageItem = {
+        id: res.id || `assistant-${Date.now()}`,
+        role: 'assistant',
+        content: res.answer,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        sources: res.sources,
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch (err) {
+      console.error('RAG query error:', err);
+      const errText =
+        err instanceof Error
+          ? err.message
+          : 'Failed to retrieve compliance answer. Ensure backend service is reachable.';
+      setErrorMessage(errText);
+
+      const errorItem: ChatMessageItem = {
+        id: `error-${Date.now()}`,
+        role: 'assistant',
+        content: errText,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isError: true,
+      };
+      setMessages((prev) => [...prev, errorItem]);
+    } finally {
       setIsLoading(false);
     }
   };

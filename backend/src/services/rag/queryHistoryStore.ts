@@ -3,7 +3,7 @@ export interface QueryRecord {
   question: string;
   answer: string;
   country?: string;
-  carrier: string;
+  carrier?: string;
   documentType?: string;
   date: string;
   status: "completed" | "processing" | "failed";
