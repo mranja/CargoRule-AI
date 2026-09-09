@@ -21,6 +21,7 @@ apiRouter.use("/documents", documentRoutes);
 
 // Query history audit logs
 apiRouter.use("/history", historyRoutes);
+apiRouter.use("/query-history", historyRoutes);
 
 // Metrics, coverage, and dashboard stats
 apiRouter.use("/", statsRoutes);

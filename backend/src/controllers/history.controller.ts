@@ -5,7 +5,35 @@ export class HistoryController {
   public static list(req: Request, res: Response): void {
     try {
       const userId = (req as any).userId || (req.headers["x-user-id"] as string | undefined);
-      const history = queryHistoryStore.getAll(userId);
+      let history = queryHistoryStore.getAll(userId);
+
+      const search = (req.query.q || req.query.search) as string | undefined;
+      const country = req.query.country as string | undefined;
+      const carrier = req.query.carrier as string | undefined;
+
+      if (search && search.trim()) {
+        const term = search.trim().toLowerCase();
+        history = history.filter(
+          (item) =>
+            item.question.toLowerCase().includes(term) ||
+            item.answer.toLowerCase().includes(term)
+        );
+      }
+
+      if (country && country.trim() && country.toLowerCase() !== "all") {
+        const cTerm = country.trim().toLowerCase();
+        history = history.filter(
+          (item) => item.country && item.country.toLowerCase().includes(cTerm)
+        );
+      }
+
+      if (carrier && carrier.trim() && carrier.toLowerCase() !== "all") {
+        const carTerm = carrier.trim().toLowerCase();
+        history = history.filter(
+          (item) => item.carrier && item.carrier.toLowerCase().includes(carTerm)
+        );
+      }
+
       res.status(200).json({
         success: true,
         count: history.length,

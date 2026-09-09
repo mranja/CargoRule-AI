@@ -73,7 +73,6 @@ export async function uploadDocument(
   file: File,
   metadata: UploadMetadata
 ): Promise<{ success: boolean; documentId?: string; message?: string }> {
-  // Read file as base64 or text depending on type
   const isText = file.name.endsWith('.txt');
   let fileContent: string | undefined;
   let fileBase64: string | undefined;
@@ -168,11 +167,23 @@ export async function deleteDocument(documentId: string): Promise<boolean> {
 }
 
 /**
- * Fetches compliance query history audit logs.
+ * Fetches compliance query history audit logs with optional search & filter parameters.
  */
-export async function getQueryHistory(): Promise<QueryRecord[]> {
+export async function getQueryHistory(params?: {
+  search?: string;
+  country?: string;
+  carrier?: string;
+}): Promise<QueryRecord[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/history`, {
+    const urlParams = new URLSearchParams();
+    if (params?.search) urlParams.set('q', params.search);
+    if (params?.country && params.country !== 'all') urlParams.set('country', params.country);
+    if (params?.carrier && params.carrier !== 'all') urlParams.set('carrier', params.carrier);
+
+    const queryString = urlParams.toString();
+    const url = `${API_BASE_URL}/history${queryString ? `?${queryString}` : ''}`;
+
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -228,6 +239,24 @@ export async function deleteQueryRecord(id: string): Promise<boolean> {
     return response.ok;
   } catch (error) {
     console.warn('Failed to delete query record:', error);
+    return false;
+  }
+}
+
+/**
+ * Clears all query history records.
+ */
+export async function clearQueryHistory(): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/history`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return response.ok;
+  } catch (error) {
+    console.warn('Failed to clear query history:', error);
     return false;
   }
 }
