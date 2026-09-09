@@ -24,7 +24,6 @@ export default function Home() {
   }>({});
   const [recentDocs, setRecentDocs] = useState<DocumentRecord[]>([]);
   const [recentQueries, setRecentQueries] = useState<QueryRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
@@ -32,22 +31,20 @@ export default function Home() {
       try {
         const data = await getDashboardStats();
         if (mounted && data) {
-          const stats = data.stats || {};
+          const stats = (data.stats || {}) as Record<string, unknown>;
           setStatsData({
-            totalDocuments: stats.indexedDocuments ?? 0,
-            totalCountries: stats.countriesCount ?? 0,
-            totalCarriers: stats.carriersCount ?? 0,
+            totalDocuments: typeof stats.indexedDocuments === 'number' ? stats.indexedDocuments : 0,
+            totalCountries: typeof stats.countriesCount === 'number' ? stats.countriesCount : 0,
+            totalCarriers: typeof stats.carriersCount === 'number' ? stats.carriersCount : 0,
             totalQueries: (data.recentQueries || []).length,
-            countries: stats.countries || [],
-            carriers: stats.carriers || [],
+            countries: Array.isArray(stats.countries) ? (stats.countries as string[]) : [],
+            carriers: Array.isArray(stats.carriers) ? (stats.carriers as string[]) : [],
           });
           setRecentDocs(data.recentDocuments || []);
           setRecentQueries(data.recentQueries || []);
         }
       } catch (err) {
         console.warn('Could not load dashboard data:', err);
-      } finally {
-        if (mounted) setIsLoading(false);
       }
     }
     loadStats();
