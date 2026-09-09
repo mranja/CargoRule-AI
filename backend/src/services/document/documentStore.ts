@@ -8,11 +8,12 @@ import { extractTextFromBuffer } from "./extraction";
 import { SAMPLE_DOCUMENTS } from "../../../tests/fixtures/rag";
 import { normalizeCountry } from "../../utils/country";
 import { normalizeCarrier } from "../../utils/carrier";
+import { validateUploadInput } from "./validation";
 
 export interface DocumentRecord {
   id: string;
   title: string;
-  status: "indexed" | "processing" | "error";
+  status: "indexed" | "processing" | "error" | "processed" | "failed";
   type: string;
   country?: string;
   carrier?: string;
@@ -94,6 +95,17 @@ class DocumentStoreManager {
     input: IngestDocumentInput,
     vectorStore: VectorStore = getDefaultVectorStore()
   ): Promise<DocumentRecord> {
+    // Validate input payload before processing
+    const validated = validateUploadInput({
+      documentName: input.documentName,
+      fileName: input.fileName,
+      fileType: input.fileType,
+      fileContent: input.fileContent,
+      fileBuffer: input.fileBuffer,
+      effectiveDate: input.effectiveDate,
+      expiryDate: input.expiryDate,
+    });
+
     const documentId = input.documentId || `doc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const now = new Date().toISOString();
     const normalizedCountry = normalizeCountry(input.country);
@@ -101,18 +113,18 @@ class DocumentStoreManager {
 
     const record: DocumentRecord = {
       id: documentId,
-      title: input.documentName,
+      title: validated.documentName,
       status: "processing",
       type: input.documentType || "Customs Regulation",
       country: normalizedCountry,
       carrier: normalizedCarrier,
       uploadedAt: now,
-      effectiveDate: input.effectiveDate,
-      expiryDate: input.expiryDate,
+      effectiveDate: validated.effectiveDate,
+      expiryDate: validated.expiryDate,
       version: input.version || "1.0",
       chunkCount: 0,
-      fileName: input.fileName,
-      fileSize: input.fileBuffer ? input.fileBuffer.length : input.fileContent?.length || 0,
+      fileName: validated.sanitizedFileName,
+      fileSize: validated.fileSize,
     };
 
     this.documents.set(documentId, record);
@@ -123,8 +135,8 @@ class DocumentStoreManager {
       if (!rawText && input.fileBuffer) {
         const extracted = await extractTextFromBuffer(
           input.fileBuffer,
-          input.fileName,
-          input.fileType || input.fileName.split(".").pop() || "txt"
+          validated.sanitizedFileName,
+          validated.fileType
         );
         rawText = extracted.text;
       }
@@ -141,11 +153,12 @@ class DocumentStoreManager {
 
       // 3. Document Chunking
       const metadata: DocumentMetadata = {
-        documentName: input.documentName,
+        documentName: validated.documentName,
         country: normalizedCountry,
         carrier: normalizedCarrier,
         documentType: input.documentType,
-        effectiveDate: input.effectiveDate,
+        effectiveDate: validated.effectiveDate,
+        expiryDate: validated.expiryDate,
         version: input.version || "1.0",
       };
 
@@ -164,7 +177,7 @@ class DocumentStoreManager {
       // 5. Vector Store Upsert
       await vectorStore.upsert(chunks, embeddings);
 
-      // 6. Update Record
+      // 6. Update Record Status
       record.status = "indexed";
       record.chunkCount = chunks.length;
       this.documentChunks.set(documentId, chunks);
@@ -175,6 +188,14 @@ class DocumentStoreManager {
       record.status = "error";
       record.errorMessage = error instanceof Error ? error.message : String(error);
       this.documents.set(documentId, record);
+
+      // Rollback any partial vector store insertions
+      try {
+        await vectorStore.deleteByDocumentId(documentId);
+      } catch {
+        // ignore rollback errors
+      }
+      this.documentChunks.delete(documentId);
       throw error;
     }
   }

@@ -14,12 +14,14 @@ import { ChatInputBar } from '@/components/ask/ChatInputBar';
 function AskContent() {
   const searchParams = useSearchParams();
   const initialParamQuery = searchParams.get('q') || '';
+  const initialParamCarrier = searchParams.get('carrier') || 'all';
+  const initialParamCountry = searchParams.get('country') || 'all';
 
   const [question, setQuestion] = useState(initialParamQuery);
   const [prevParamQuery, setPrevParamQuery] = useState(initialParamQuery);
   const [filters, setFilters] = useState<AskQueryFilters>({
-    country: 'all',
-    carrier: 'all',
+    country: initialParamCountry,
+    carrier: initialParamCarrier,
     documentType: 'all',
   });
   const [isLoading, setIsLoading] = useState(false);

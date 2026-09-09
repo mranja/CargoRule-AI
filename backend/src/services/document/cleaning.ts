@@ -2,6 +2,8 @@ function removeControlCharacters(text: string): string {
   return text
     .replace(/^\uFEFF/, "")
     .replace(/\0/g, "")
+    .replace(/\u00AD/g, "")
+    .replace(/\f/g, "\n\n")
     .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "");
 }
 

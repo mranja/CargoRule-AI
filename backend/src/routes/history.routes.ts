@@ -5,6 +5,7 @@ const router = Router();
 
 router.get("/", HistoryController.list);
 router.get("/:id", HistoryController.getById);
+router.delete("/:id", HistoryController.delete);
 router.delete("/", HistoryController.clear);
 
 export default router;

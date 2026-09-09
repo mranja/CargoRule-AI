@@ -13,6 +13,7 @@ const testScripts = [
   "scripts/test-full-api-integration.ts",
   "scripts/test-country-metadata.ts",
   "scripts/test-document-carrier-integration.ts",
+  "scripts/test-pipeline-validation-source-storage.ts",
 ];
 
 console.log("==================================================");

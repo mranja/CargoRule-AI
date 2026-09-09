@@ -4,12 +4,11 @@ import pdfParse from "pdf-parse";
 import mammoth from "mammoth";
 import { ExtractedDocument, SupportedDocumentType } from "../../types/document";
 
+import { sanitizeFileName, validateDocumentType } from "./validation";
+
 function resolveDocumentType(fileName: string, fileType?: string): SupportedDocumentType {
-  const normalizedType = (fileType || path.extname(fileName).slice(1)).toLowerCase();
-  if (normalizedType === "pdf" || normalizedType === "docx" || normalizedType === "txt") {
-    return normalizedType;
-  }
-  throw new Error(`Unsupported document type: ${normalizedType || "unknown"}`);
+  const safeName = sanitizeFileName(fileName);
+  return validateDocumentType(safeName, fileType);
 }
 
 export async function extractTextFromBuffer(

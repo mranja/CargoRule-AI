@@ -101,9 +101,19 @@ export class DocumentController {
       });
     } catch (error) {
       console.error("Document upload error:", error);
-      res.status(500).json({
+      const message = error instanceof Error ? error.message : "Failed to process and index document";
+      const isValidationError =
+        (error instanceof Error && error.name === "ValidationError") ||
+        message.includes("is required") ||
+        message.includes("must be") ||
+        message.includes("Unsupported document type") ||
+        message.includes("empty") ||
+        message.includes("cannot be earlier") ||
+        message.includes("exceeds the maximum") ||
+        message.includes("unsafe filename");
+      res.status(isValidationError ? 400 : 500).json({
         success: false,
-        error: error instanceof Error ? error.message : "Failed to process and index document",
+        error: message,
       });
     }
   }

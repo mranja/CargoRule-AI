@@ -23,8 +23,17 @@ export class RAGController {
       return;
     }
 
+    if (question.trim().length > 1000) {
+      res.status(400).json({
+        success: false,
+        error: "Question exceeds maximum allowed length of 1000 characters",
+      });
+      return;
+    }
+
     const queryId = `query-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const now = new Date().toISOString();
+    const userId = (req as any).userId || (req.headers["x-user-id"] as string | undefined);
 
     try {
       // Map filters if provided and not "all"
@@ -49,12 +58,15 @@ export class RAGController {
       // Format sources from retrieved chunks for rich frontend display
       const formattedSources = ragResult.retrievalResponse.retrievedChunks.map((chunk, index) => ({
         id: chunk.id || `src-${index}`,
+        chunkId: chunk.id || `chunk-${index}`,
         documentId: chunk.documentId,
+        documentName: chunk.metadata.documentName,
         documentTitle: chunk.metadata.documentName,
         section: chunk.metadata.section,
         pageNumber: chunk.metadata.pageNumber,
         country: chunk.metadata.country,
         carrier: chunk.metadata.carrier,
+        documentType: chunk.metadata.documentType,
         snippet: chunk.content.length > 200 ? `${chunk.content.substring(0, 200)}...` : chunk.content,
         relevanceScore: chunk.relevanceScore,
       }));
@@ -62,6 +74,7 @@ export class RAGController {
       // Record in query history store
       queryHistoryStore.addQuery({
         id: queryId,
+        userId,
         question: question.trim(),
         answer: ragResult.answer,
         country: normalizedCountry,
@@ -72,8 +85,10 @@ export class RAGController {
           day: "numeric",
           year: "numeric",
         }),
+        createdAt: now,
         status: "completed",
         sources: formattedSources,
+        retrievedSources: formattedSources,
         confidenceScore: ragResult.context.confidenceScore,
         model: ragResult.model,
       });
@@ -96,6 +111,7 @@ export class RAGController {
       // Record failed query
       queryHistoryStore.addQuery({
         id: queryId,
+        userId,
         question: question.trim(),
         answer: "Failed to process compliance query due to an internal error.",
         country: filters?.country || "Global",
@@ -105,8 +121,10 @@ export class RAGController {
           day: "numeric",
           year: "numeric",
         }),
+        createdAt: now,
         status: "failed",
         sources: [],
+        errorMessage: error instanceof Error ? error.message : "Internal error",
       });
 
       res.status(500).json({
