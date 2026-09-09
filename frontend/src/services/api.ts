@@ -236,10 +236,10 @@ export async function deleteQueryRecord(id: string): Promise<boolean> {
  * Fetches dashboard KPIs, metrics, recent docs and queries.
  */
 export async function getDashboardStats(): Promise<{
-  kpi?: any[];
+  kpi?: Record<string, unknown>[];
   recentDocuments?: DocumentRecord[];
   recentQueries?: QueryRecord[];
-  stats?: any;
+  stats?: Record<string, unknown>;
 }> {
   try {
     const response = await fetch(`${API_BASE_URL}/dashboard/stats`, {

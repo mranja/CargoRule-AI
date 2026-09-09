@@ -42,12 +42,19 @@ export interface QueryRecord {
 export interface DocumentRecord {
   id: string;
   title: string;
-  status: 'indexed' | 'processing' | 'error';
+  status: 'indexed' | 'processing' | 'error' | 'processed' | 'failed';
   type: string;
   country?: string;
   carrier?: string;
   uploadedAt: string;
   updatedAt?: string;
+  effectiveDate?: string;
+  expiryDate?: string;
+  version?: string;
+  chunkCount?: number;
+  fileName?: string;
+  fileSize?: number;
+  errorMessage?: string;
 }
 
 export interface UploadMetadata {
@@ -104,6 +111,12 @@ export interface DocumentProcessingStatus {
   startedAt?: string;
   completedAt?: string;
   errorMessage?: string;
+}
+
+export interface CountryOption {
+  code: string;
+  name: string;
+  region?: string;
 }
 
 export interface AskQueryFilters {
