@@ -8,10 +8,17 @@ export interface ChunkingOptions {
   overlapTokens?: number;
 }
 
-const HEADING_PATTERN = /^(?:\d+(?:\.\d+)*[\.\)]?\s+|[A-Z][A-Z0-9\s\-]{3,})$/;
+const HEADING_PATTERNS = [
+  /^#{1,6}\s+.+$/, // Markdown headings (# Heading)
+  /^(?:SECTION|ARTICLE|CHAPTER|PART|CLAUSE|POLICY|REGULATION|APPENDIX|SCHEDULE|RULE)\s+[0-9A-Z\.\-_:]*(?:\s*[-:–—]\s*.*)?$/i,
+  /^(?:\d+(?:\.\d+)*[\.\)]?\s+[A-Za-z0-9\s\-:–—]{3,})$/, // Numbered headings: 1.1 Requirements
+  /^[A-Z][A-Z0-9\s\-:–—]{3,50}$/, // ALL CAPS headings
+];
 
 function isLikelyHeading(line: string): boolean {
-  return HEADING_PATTERN.test(line.trim());
+  const trimmed = line.trim();
+  if (!trimmed || trimmed.length > 120) return false;
+  return HEADING_PATTERNS.some((pattern) => pattern.test(trimmed));
 }
 
 function splitOversizedParagraph(paragraph: string, maxChars: number): string[] {
@@ -55,35 +62,46 @@ export function chunkDocument(text: string, options: ChunkingOptions): DocumentC
   let current = "";
   let currentHeading: string | undefined;
 
-  const addChunk = (content: string) => {
+  const addChunk = (content: string, heading?: string) => {
     const normalized = content.trim();
     if (!normalized) return;
+    const chunkIndex = chunks.length;
     chunks.push({
-      id: `${options.documentId}_${chunks.length}`,
+      id: `${options.documentId}_${chunkIndex}`,
       documentId: options.documentId,
       content: normalized,
-      chunkIndex: chunks.length,
+      chunkIndex,
       metadata: {
         ...options.metadata,
         documentName: options.metadata.documentName || options.documentId,
-        ...(currentHeading && preserveHeadings ? { section: currentHeading } : {}),
+        chunkIndex,
+        expiryDate: options.metadata.expiryDate,
+        ...(heading && preserveHeadings ? { section: heading } : {}),
       },
     });
   };
 
   for (const paragraph of paragraphs) {
     const firstLine = paragraph.split("\n")[0]?.trim() ?? "";
-    if (isLikelyHeading(firstLine)) {
+    const isHeading = isLikelyHeading(firstLine);
+
+    if (isHeading && current.trim()) {
+      addChunk(current, currentHeading);
+      current = "";
+      currentHeading = firstLine;
+    } else if (isHeading) {
       currentHeading = firstLine;
     }
 
     if (current && current.length + paragraph.length + 2 > targetCharacters) {
-      addChunk(current);
+      addChunk(current, currentHeading);
       current = current.slice(Math.max(0, current.length - overlapCharacters));
     }
     current = current ? `${current}\n\n${paragraph}` : paragraph;
   }
 
-  addChunk(current);
+  if (current.trim()) {
+    addChunk(current, currentHeading);
+  }
   return chunks;
 }

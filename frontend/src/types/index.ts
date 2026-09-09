@@ -23,11 +23,20 @@ export interface KpiItem {
 
 export interface QueryRecord {
   id: string;
+  userId?: string;
   question: string;
+  answer?: string;
   country?: string;
   carrier?: string;
+  documentType?: string;
   date: string;
+  createdAt?: string;
   status: 'completed' | 'processing' | 'failed';
+  sources?: SourceCitation[];
+  retrievedSources?: SourceCitation[];
+  confidenceScore?: number;
+  model?: string;
+  errorMessage?: string;
 }
 
 export interface DocumentRecord {
@@ -110,12 +119,15 @@ export interface AskQueryPayload {
 
 export interface SourceCitation {
   id: string;
+  chunkId?: string;
   documentId?: string;
+  documentName?: string;
   documentTitle: string;
   section?: string;
   pageNumber?: number | string;
   country?: string;
   carrier?: string;
+  documentType?: string;
   snippet?: string;
   relevanceScore?: number;
 }

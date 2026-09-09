@@ -18,7 +18,8 @@
     "test:rag-pipeline": "node node_modules\\ts-node\\dist\\bin.js scripts\\test-complete-rag-pipeline.ts",
     "test:full-api": "node node_modules\\ts-node\\dist\\bin.js scripts\\test-full-api-integration.ts",
     "test:country-metadata": "node node_modules\\ts-node\\dist\\bin.js scripts\\test-country-metadata.ts",
-    "test:document-carrier": "node node_modules\\ts-node\\dist\\bin.js scripts\\test-document-carrier-integration.ts"
+    "test:document-carrier": "node node_modules\\ts-node\\dist\\bin.js scripts\\test-document-carrier-integration.ts",
+    "test:pipeline-validation": "node node_modules\\ts-node\\dist\\bin.js scripts\\test-pipeline-validation-source-storage.ts"
   },
   "keywords": [],
   "author": "",

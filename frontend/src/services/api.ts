@@ -193,6 +193,46 @@ export async function getQueryHistory(): Promise<QueryRecord[]> {
 }
 
 /**
+ * Fetches a single query record with full sources detail by ID.
+ */
+export async function getQueryById(id: string): Promise<QueryRecord | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/history/${id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store',
+    });
+
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.query || null;
+  } catch (error) {
+    console.warn('Failed to fetch query record:', error);
+    return null;
+  }
+}
+
+/**
+ * Deletes a single query record from audit history.
+ */
+export async function deleteQueryRecord(id: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/history/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return response.ok;
+  } catch (error) {
+    console.warn('Failed to delete query record:', error);
+    return false;
+  }
+}
+
+/**
  * Fetches dashboard KPIs, metrics, recent docs and queries.
  */
 export async function getDashboardStats(): Promise<{

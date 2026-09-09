@@ -8,11 +8,15 @@ import { IconHistory } from '../common/Icons';
 export interface RecentQueriesProps {
   queries?: QueryRecord[];
   onAskClick?: () => void;
+  selectedQueryId?: string;
+  onQueryClick?: (query: QueryRecord) => void;
 }
 
 export const RecentQueries: React.FC<RecentQueriesProps> = ({
   queries = [],
   onAskClick,
+  selectedQueryId,
+  onQueryClick,
 }) => {
   return (
     <Card className="p-5 sm:p-6">
@@ -42,34 +46,50 @@ export const RecentQueries: React.FC<RecentQueriesProps> = ({
                 <th className="px-3 py-2.5">Question</th>
                 <th className="px-3 py-2.5">Country</th>
                 <th className="px-3 py-2.5">Carrier</th>
+                <th className="px-3 py-2.5">Sources</th>
                 <th className="px-3 py-2.5">Date</th>
                 <th className="px-3 py-2.5">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-              {queries.map((q) => (
-                <tr key={q.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
-                  <td className="px-3 py-3 font-medium text-zinc-900 dark:text-zinc-100 max-w-xs truncate">
-                    {q.question}
-                  </td>
-                  <td className="px-3 py-3">{q.country || '--'}</td>
-                  <td className="px-3 py-3">{q.carrier || '--'}</td>
-                  <td className="px-3 py-3 text-zinc-400">{q.date}</td>
-                  <td className="px-3 py-3">
-                    <Badge
-                      variant={
-                        q.status === 'completed'
-                          ? 'success'
-                          : q.status === 'processing'
-                          ? 'primary'
-                          : 'danger'
-                      }
-                    >
-                      {q.status}
-                    </Badge>
-                  </td>
-                </tr>
-              ))}
+              {queries.map((q) => {
+                const isSelected = selectedQueryId === q.id;
+                const sourceCount = q.sources?.length ?? 0;
+                return (
+                  <tr
+                    key={q.id}
+                    onClick={() => onQueryClick?.(q)}
+                    className={`transition-colors ${
+                      onQueryClick ? 'cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50' : ''
+                    } ${isSelected ? 'bg-blue-50/70 dark:bg-blue-950/40 font-medium' : ''}`}
+                  >
+                    <td className="px-3 py-3 font-medium text-zinc-900 dark:text-zinc-100 max-w-xs truncate">
+                      {q.question}
+                    </td>
+                    <td className="px-3 py-3">{q.country || '--'}</td>
+                    <td className="px-3 py-3">{q.carrier || '--'}</td>
+                    <td className="px-3 py-3">
+                      <span className="inline-flex items-center rounded-md bg-zinc-100 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                        {sourceCount} {sourceCount === 1 ? 'src' : 'srcs'}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 text-zinc-400">{q.date}</td>
+                    <td className="px-3 py-3">
+                      <Badge
+                        variant={
+                          q.status === 'completed'
+                            ? 'success'
+                            : q.status === 'processing'
+                            ? 'primary'
+                            : 'danger'
+                        }
+                      >
+                        {q.status}
+                      </Badge>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

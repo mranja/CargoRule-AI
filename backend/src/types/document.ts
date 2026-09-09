@@ -178,6 +178,16 @@ export interface DocumentMetadata {
   effectiveDate?: string;
 
   /**
+   * ISO 8601 date when this policy expires or is superseded.
+   */
+  expiryDate?: string;
+
+  /**
+   * Sequential index of this chunk within the parent document.
+   */
+  chunkIndex?: number;
+
+  /**
    * Version identifier of the document.
    *
    * Format: "v1", "v2", etc. OR "2024-06-01" (date-based versioning)
