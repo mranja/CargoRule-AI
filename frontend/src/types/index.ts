@@ -169,3 +169,88 @@ export interface ChatSession {
   messages: ChatMessageItem[];
   activeFilters: AskQueryFilters;
 }
+
+export interface DailyProcessingStats {
+  date: string;
+  total: number;
+  processed: number;
+  failed: number;
+  processing: number;
+}
+
+export interface RecentActivityItem {
+  id: string;
+  title: string;
+  fileName?: string;
+  status: 'indexed' | 'processing' | 'error' | 'processed' | 'failed';
+  chunkCount: number;
+  uploadedAt: string;
+  updatedAt?: string;
+  errorMessage?: string;
+  country?: string;
+  carrier?: string;
+  type?: string;
+}
+
+export interface DocumentProcessingStats {
+  totalDocuments: number;
+  processedDocuments: number;
+  processingDocuments: number;
+  failedDocuments: number;
+  successRate: number;
+  failureRate: number;
+  recentActivity: RecentActivityItem[];
+  processingOverTime: DailyProcessingStats[];
+}
+
+export interface DocumentSyncItem {
+  documentId: string;
+  title: string;
+  chunkCount: number;
+  vectorCount: number;
+  status: string;
+  isConsistent: boolean;
+  country?: string;
+  carrier?: string;
+}
+
+export interface IndexingConsistencyStats {
+  successfullyIndexed: number;
+  missingOrInconsistent: number;
+  orphanedVectors: number;
+  isConsistent: boolean;
+  perDocument: DocumentSyncItem[];
+}
+
+export interface CategoryDistribution {
+  name: string;
+  documentCount: number;
+  chunkCount: number;
+  vectorCount: number;
+}
+
+export interface DocumentVectorStats {
+  totalDocumentsStored: number;
+  totalChunksGenerated: number;
+  totalVectorsStored: number;
+  averageVectorsPerDocument: number;
+  averageChunksPerDocument: number;
+  indexingConsistency: IndexingConsistencyStats;
+  distributions: {
+    byCarrier: CategoryDistribution[];
+    byCountry: CategoryDistribution[];
+    byDocumentType: CategoryDistribution[];
+  };
+  vectorDbHealth: {
+    status: 'connected' | 'degraded' | 'error';
+    latencyMs: number;
+    totalVectors: number;
+    lastChecked: string;
+  };
+}
+
+export interface AdminDashboardStats {
+  processing: DocumentProcessingStats;
+  vectorDatabase: DocumentVectorStats;
+  generatedAt: string;
+}

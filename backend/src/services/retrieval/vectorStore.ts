@@ -15,6 +15,13 @@ export interface VectorStoreRecord {
   vector: number[];
 }
 
+export interface VectorDbHealth {
+  status: "connected" | "degraded" | "error";
+  latencyMs: number;
+  totalVectors: number;
+  lastChecked: string;
+}
+
 export interface VectorStore {
   upsert(chunks: DocumentChunk[], embeddings: Embedding[]): Promise<void>;
   search(queryVector: number[], options?: VectorStoreSearchOptions): Promise<RetrievedChunk[]>;
@@ -23,6 +30,8 @@ export interface VectorStore {
   updateMetadataByDocumentId(documentId: string, metadata: Partial<DocumentMetadata>): Promise<number>;
   deleteByDocumentId(documentId: string): Promise<number>;
   clear(): Promise<void>;
+  getVectorCountsByDocumentId(): Promise<Map<string, number>>;
+  checkHealth(): Promise<VectorDbHealth>;
 }
 
 /**
@@ -221,6 +230,36 @@ export function createInMemoryVectorStore(initialRecords: VectorStoreRecord[] = 
 
     async clear(): Promise<void> {
       records.clear();
+    },
+
+    async getVectorCountsByDocumentId(): Promise<Map<string, number>> {
+      const counts = new Map<string, number>();
+      for (const record of records.values()) {
+        const docId = record.chunk.documentId;
+        counts.set(docId, (counts.get(docId) ?? 0) + 1);
+      }
+      return counts;
+    },
+
+    async checkHealth(): Promise<VectorDbHealth> {
+      const startTime = Date.now();
+      try {
+        const total = records.size;
+        const latencyMs = Math.max(0, Date.now() - startTime);
+        return {
+          status: "connected",
+          latencyMs,
+          totalVectors: total,
+          lastChecked: new Date().toISOString(),
+        };
+      } catch (error) {
+        return {
+          status: "error",
+          latencyMs: Math.max(0, Date.now() - startTime),
+          totalVectors: 0,
+          lastChecked: new Date().toISOString(),
+        };
+      }
     },
   };
 }

@@ -1,4 +1,5 @@
 import {
+  AdminDashboardStats,
   AskQueryPayload,
   AskQueryResponse,
   DocumentRecord,
@@ -310,3 +311,29 @@ export async function getCarriers(): Promise<Array<{ carrier: string; count: num
     return [];
   }
 }
+
+/**
+ * Fetches comprehensive document processing and vector database statistics for admin dashboard.
+ */
+export async function getAdminStats(): Promise<AdminDashboardStats | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/stats`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch admin stats (HTTP ${response.status})`);
+    }
+
+    const data = await response.json();
+    return data.stats || null;
+  } catch (error) {
+    console.warn('Backend admin stats API unavailable:', error);
+    return null;
+  }
+}
+

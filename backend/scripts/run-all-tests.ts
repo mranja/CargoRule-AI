@@ -14,6 +14,7 @@ const testScripts = [
   "scripts/test-country-metadata.ts",
   "scripts/test-document-carrier-integration.ts",
   "scripts/test-pipeline-validation-source-storage.ts",
+  "scripts/test-admin-stats.ts",
 ];
 
 console.log("==================================================");

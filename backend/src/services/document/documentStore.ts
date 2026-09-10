@@ -214,6 +214,22 @@ class DocumentStoreManager {
     return this.documentChunks.get(id) || [];
   }
 
+  public getAllChunks(): DocumentChunk[] {
+    const all: DocumentChunk[] = [];
+    for (const chunks of this.documentChunks.values()) {
+      all.push(...chunks);
+    }
+    return all;
+  }
+
+  public getTotalChunksCount(): number {
+    let count = 0;
+    for (const chunks of this.documentChunks.values()) {
+      count += chunks.length;
+    }
+    return count;
+  }
+
   public async updateDocument(
     id: string,
     updates: UpdateDocumentInput,

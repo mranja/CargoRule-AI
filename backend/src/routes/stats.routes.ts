@@ -6,5 +6,6 @@ const router = Router();
 router.get("/dashboard/stats", StatsController.getDashboardStats);
 router.get("/coverage/countries", StatsController.getCountries);
 router.get("/coverage/carriers", StatsController.getCarriers);
+router.get("/admin/stats", StatsController.getAdminStats);
 
 export default router;
