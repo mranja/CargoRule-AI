@@ -96,9 +96,6 @@ export class RetrievalController {
         service: "retrieval-pipeline",
         indexedChunks,
         model: EmbeddingConfig.model,
-        dimensions: EmbeddingConfig.dimensions,
-        provider: VectorDatabaseConfig.provider,
-        indexName: VectorDatabaseConfig.indexName,
       });
     } catch (error) {
       next(error);

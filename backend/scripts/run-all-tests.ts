@@ -15,6 +15,7 @@ const testScripts = [
   "scripts/test-document-carrier-integration.ts",
   "scripts/test-pipeline-validation-source-storage.ts",
   "scripts/test-admin-stats.ts",
+  "scripts/test-security.ts",
 ];
 
 console.log("==================================================");

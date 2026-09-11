@@ -29,6 +29,15 @@ export function validateRetrievalRequest(req: Request, res: Response, next: Next
     return;
   }
 
+  // Validate text query length
+  if (hasTextQuery && queryString.trim().length > 1000) {
+    res.status(400).json({
+      success: false,
+      error: "Query exceeds maximum allowed length of 1000 characters",
+    });
+    return;
+  }
+
   // Validate queryVector if provided
   if (queryVector !== undefined) {
     if (!Array.isArray(queryVector) || queryVector.length === 0) {
@@ -48,13 +57,20 @@ export function validateRetrievalRequest(req: Request, res: Response, next: Next
     }
   }
 
-  // Validate topK if provided
+  // Validate topK with safe upper bound
   const requestedTopK = topK !== undefined ? topK : parameters?.topK;
   if (requestedTopK !== undefined) {
     if (typeof requestedTopK !== "number" || !Number.isInteger(requestedTopK) || requestedTopK <= 0) {
       res.status(400).json({
         success: false,
         error: "'topK' must be a positive integer",
+      });
+      return;
+    }
+    if (requestedTopK > 50) {
+      res.status(400).json({
+        success: false,
+        error: "'topK' exceeds maximum allowed limit of 50 chunks",
       });
       return;
     }

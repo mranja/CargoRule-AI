@@ -33,7 +33,7 @@ export class RAGController {
 
     const queryId = `query-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const now = new Date().toISOString();
-    const userId = (req as any).userId || (req.headers["x-user-id"] as string | undefined);
+    const userId = req.user?.userId || (req.headers["x-user-id"] as string | undefined);
 
     try {
       // Map filters if provided and not "all"
@@ -106,7 +106,7 @@ export class RAGController {
         model: ragResult.model,
       });
     } catch (error) {
-      console.error("Error executing RAG query:", error);
+      console.error("Error executing RAG query:", error instanceof Error ? error.message : "Internal error");
 
       // Record failed query
       queryHistoryStore.addQuery({
@@ -124,12 +124,12 @@ export class RAGController {
         createdAt: now,
         status: "failed",
         sources: [],
-        errorMessage: error instanceof Error ? error.message : "Internal error",
+        errorMessage: "Internal error generating RAG answer",
       });
 
       res.status(500).json({
         success: false,
-        error: error instanceof Error ? error.message : "Internal error generating RAG answer",
+        error: "Internal error generating RAG answer. Please check service status.",
       });
     }
   }

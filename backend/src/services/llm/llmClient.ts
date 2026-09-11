@@ -168,14 +168,23 @@ export function createOpenAICompatibleLLMClient(
       }
 
       if (!response.ok) {
-        let errorBody = "";
+        let sanitizedError = "External AI service returned an error";
         try {
-          errorBody = await response.text();
+          const errorBody = await response.text();
+          // Extract general error message if JSON, avoid leaking headers or keys
+          try {
+            const parsed = JSON.parse(errorBody);
+            if (parsed.error?.message && typeof parsed.error.message === "string") {
+              sanitizedError = parsed.error.message.slice(0, 200);
+            }
+          } catch {
+            sanitizedError = errorBody.slice(0, 100);
+          }
         } catch {
           // Ignore read error
         }
         throw new Error(
-          `LLM request failed with status ${response.status}${errorBody ? `: ${errorBody}` : ""}`
+          `LLM request failed with status ${response.status}: ${sanitizedError}`
         );
       }
 

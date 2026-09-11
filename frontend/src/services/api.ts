@@ -11,6 +11,30 @@ const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 /**
+ * Returns security and authentication headers for frontend requests.
+ * Uses sessionStorage/localStorage token if available, or admin demo token for admin operations.
+ */
+function getAuthHeaders(isAdmin = false): Record<string, string> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  if (typeof window !== 'undefined') {
+    const storedToken = localStorage.getItem('cargorule_auth_token') || sessionStorage.getItem('cargorule_auth_token');
+    if (storedToken) {
+      headers['Authorization'] = `Bearer ${storedToken}`;
+    } else {
+      // Default demo role header for seamless hackathon / development experience
+      headers['X-Demo-Role'] = isAdmin ? 'admin' : 'user';
+    }
+  } else {
+    headers['X-Demo-Role'] = isAdmin ? 'admin' : 'user';
+  }
+
+  return headers;
+}
+
+/**
  * Dispatches a compliance query to the backend RAG pipeline.
  */
 export async function askQuestion(
@@ -107,9 +131,7 @@ export async function uploadDocument(
 
   const response = await fetch(`${API_BASE_URL}/documents/upload`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getAuthHeaders(true),
     body: JSON.stringify(payload),
   });
 
@@ -137,9 +159,7 @@ export async function updateDocument(
 ): Promise<{ success: boolean; document?: DocumentRecord; message?: string }> {
   const response = await fetch(`${API_BASE_URL}/documents/${documentId}`, {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getAuthHeaders(true),
     body: JSON.stringify(metadata),
   });
 
@@ -164,6 +184,7 @@ export async function updateDocument(
 export async function deleteDocument(documentId: string): Promise<boolean> {
   const response = await fetch(`${API_BASE_URL}/documents/${documentId}`, {
     method: 'DELETE',
+    headers: getAuthHeaders(true),
   });
   return response.ok;
 }
@@ -319,9 +340,7 @@ export async function getAdminStats(): Promise<AdminDashboardStats | null> {
   try {
     const response = await fetch(`${API_BASE_URL}/admin/stats`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(true),
       cache: 'no-store',
     });
 

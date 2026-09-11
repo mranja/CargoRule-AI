@@ -20,7 +20,8 @@
     "test:country-metadata": "node node_modules\\ts-node\\dist\\bin.js scripts\\test-country-metadata.ts",
     "test:document-carrier": "node node_modules\\ts-node\\dist\\bin.js scripts\\test-document-carrier-integration.ts",
     "test:pipeline-validation": "node node_modules\\ts-node\\dist\\bin.js scripts\\test-pipeline-validation-source-storage.ts",
-    "test:admin-stats": "node node_modules\\ts-node\\dist\\bin.js scripts\\test-admin-stats.ts"
+    "test:admin-stats": "node node_modules\\ts-node\\dist\\bin.js scripts\\test-admin-stats.ts",
+    "test:security": "node node_modules\\ts-node\\dist\\bin.js scripts\\test-security.ts"
   },
   "keywords": [],
   "author": "",
