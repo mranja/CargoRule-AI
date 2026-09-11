@@ -62,7 +62,12 @@ export function chunkDocument(text: string, options: ChunkingOptions): DocumentC
   let current = "";
   let currentHeading: string | undefined;
 
+  const MAX_CHUNKS_PER_DOCUMENT = 500;
+
   const addChunk = (content: string, heading?: string) => {
+    if (chunks.length >= MAX_CHUNKS_PER_DOCUMENT) {
+      return; // Cap to prevent memory/embedding resource exhaustion
+    }
     const normalized = content.trim();
     if (!normalized) return;
     const chunkIndex = chunks.length;

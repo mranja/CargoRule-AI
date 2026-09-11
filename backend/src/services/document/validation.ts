@@ -122,6 +122,26 @@ export function validateUploadInput(input: {
     throw new ValidationError("Uploaded text document contains only whitespace.");
   }
 
+  // Validate magic bytes for binary files to prevent disguised file attacks
+  if (input.fileBuffer && input.fileBuffer.length >= 4) {
+    if (resolvedType === "pdf") {
+      const header = input.fileBuffer.subarray(0, 5).toString("latin1");
+      if (!header.startsWith("%PDF")) {
+        throw new ValidationError("Invalid PDF file: Missing %PDF header magic bytes.");
+      }
+    } else if (resolvedType === "docx") {
+      // DOCX files are zip containers starting with PK\x03\x04
+      const isZip =
+        input.fileBuffer[0] === 0x50 &&
+        input.fileBuffer[1] === 0x4b &&
+        (input.fileBuffer[2] === 0x03 || input.fileBuffer[2] === 0x05) &&
+        (input.fileBuffer[3] === 0x04 || input.fileBuffer[3] === 0x06);
+      if (!isZip) {
+        throw new ValidationError("Invalid DOCX file: Missing PK zip header magic bytes.");
+      }
+    }
+  }
+
   // 5. Date Validation
   if (input.effectiveDate !== undefined && input.effectiveDate !== null && input.effectiveDate !== "") {
     if (typeof input.effectiveDate !== "string" || isNaN(new Date(input.effectiveDate).getTime())) {
