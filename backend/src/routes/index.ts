@@ -7,6 +7,9 @@ import statsRoutes from "./stats.routes";
 import authRoutes from "./auth.routes";
 import { RAGController } from "../controllers/rag.controller";
 
+import { optionalAuth } from "../middleware/auth.middleware";
+import { ragQueryLimiter } from "../middleware/rateLimiter";
+
 const apiRouter = Router();
 
 // Minimal health check
@@ -19,8 +22,8 @@ apiRouter.use("/auth", authRoutes);
 
 // Primary RAG query endpoints
 apiRouter.use("/rag", ragRoutes);
-apiRouter.post("/ask", RAGController.ask);
-apiRouter.post("/query", RAGController.ask);
+apiRouter.post("/ask", optionalAuth, ragQueryLimiter, RAGController.ask);
+apiRouter.post("/query", optionalAuth, ragQueryLimiter, RAGController.ask);
 
 // Retrieval pipeline & vector search
 apiRouter.use("/retrieval", retrievalRoutes);

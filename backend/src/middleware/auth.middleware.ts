@@ -36,7 +36,12 @@ function extractUserFromRequest(req: Request): AuthUser | null {
   // 3. Check custom header for demo/hackathon environment if explicitly configured
   const demoRole = req.headers["x-demo-role"] as string | undefined;
   if (process.env.NODE_ENV !== "production" && demoRole && (demoRole === "admin" || demoRole === "user")) {
-    return AuthService.getDemoUser(demoRole);
+    const user = AuthService.getDemoUser(demoRole);
+    const explicitUserId = req.headers["x-user-id"] as string | undefined;
+    if (explicitUserId) {
+      return { ...user, userId: explicitUserId };
+    }
+    return user;
   }
 
   return null;

@@ -163,12 +163,14 @@ export function createOpenAICompatibleClient(options: {
   model?: string;
   timeoutMs?: number;
   batchSize?: number;
+  maxRetries?: number;
 } = {}): EmbeddingClient {
   const endpoint = options.endpoint || EmbeddingConfig.apiEndpoint;
   const apiKey = options.apiKey || EmbeddingConfig.apiKey;
   const model = options.model || EmbeddingConfig.model;
   const timeoutMs = options.timeoutMs || EmbeddingConfig.timeoutMs;
   const batchSize = options.batchSize || EmbeddingConfig.batchSize;
+  const maxRetries = options.maxRetries ?? 2;
   const dimensions = resolveDimensionsPayload();
 
   return {
@@ -181,46 +183,89 @@ export function createOpenAICompatibleClient(options: {
 
       const vectors: number[][] = [];
       for (const batch of chunkArray(inputs, batchSize)) {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), timeoutMs);
+        let attempt = 0;
+        let lastError: Error | null = null;
+        let success = false;
 
-        let response: Response;
-        try {
-          response = await fetch(endpoint, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${apiKey}`,
-            },
-            body: JSON.stringify({
-              input: batch,
-              model,
-              ...(dimensions ? { dimensions } : {}),
-            }),
-            signal: controller.signal,
-          });
-        } catch (error) {
-          if (error instanceof Error && error.name === "AbortError") {
-            throw new Error(`Embedding request timed out after ${timeoutMs}ms`);
+        while (attempt <= maxRetries && !success) {
+          attempt++;
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+          try {
+            const response = await fetch(endpoint, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${apiKey}`,
+              },
+              body: JSON.stringify({
+                input: batch,
+                model,
+                ...(dimensions ? { dimensions } : {}),
+              }),
+              signal: controller.signal,
+            });
+
+            if (!response.ok) {
+              const status = response.status;
+              let errorMsg = `Embedding provider returned HTTP ${status}`;
+              try {
+                const text = await response.text();
+                const parsed = JSON.parse(text);
+                if (parsed.error?.message) {
+                  errorMsg += `: ${String(parsed.error.message).slice(0, 150)}`;
+                }
+              } catch {
+                // Ignore parse failure
+              }
+
+              if (status === 401 || status === 403 || status === 400) {
+                throw new Error(errorMsg);
+              }
+
+              if (attempt <= maxRetries && (status === 429 || status >= 500)) {
+                await new Promise((resolve) => setTimeout(resolve, attempt * 300));
+                continue;
+              }
+
+              throw new Error(errorMsg);
+            }
+
+            const payload = (await response.json()) as OpenAIEmbeddingResponse;
+            const items = [...(payload.data ?? [])].sort(
+              (left, right) => (left.index ?? 0) - (right.index ?? 0)
+            );
+            if (items.length !== batch.length) {
+              throw new Error(
+                "Embedding service returned a different number of vectors than inputs"
+              );
+            }
+
+            for (const item of items) {
+              assertValidVector(item.embedding);
+              vectors.push(item.embedding);
+            }
+            success = true;
+          } catch (error) {
+            if (error instanceof Error && error.name === "AbortError") {
+              lastError = new Error(`Embedding request timed out after ${timeoutMs}ms`);
+            } else {
+              lastError = error instanceof Error ? error : new Error(String(error));
+            }
+
+            const msg = lastError.message;
+            if (msg.includes("401") || msg.includes("403") || msg.includes("400")) {
+              throw lastError;
+            }
+
+            if (attempt > maxRetries) {
+              throw lastError;
+            }
+            await new Promise((resolve) => setTimeout(resolve, attempt * 300));
+          } finally {
+            clearTimeout(timeout);
           }
-          throw error;
-        } finally {
-          clearTimeout(timeout);
-        }
-
-        if (!response.ok) {
-          throw new Error(`Embedding request failed with status ${response.status}`);
-        }
-
-        const payload = await response.json() as OpenAIEmbeddingResponse;
-        const items = [...(payload.data ?? [])].sort((left, right) => (left.index ?? 0) - (right.index ?? 0));
-        if (items.length !== batch.length) {
-          throw new Error("Embedding service returned a different number of vectors than inputs");
-        }
-
-        for (const item of items) {
-          assertValidVector(item.embedding);
-          vectors.push(item.embedding);
         }
       }
 

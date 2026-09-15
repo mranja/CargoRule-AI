@@ -10,7 +10,8 @@ function makeRequest(
   server: http.Server,
   path: string,
   method: string = "GET",
-  body?: any
+  body?: any,
+  customHeaders: Record<string, string> = {}
 ): Promise<{ status: number; data: any }> {
   return new Promise((resolve, reject) => {
     const port = (server.address() as any).port;
@@ -25,6 +26,8 @@ function makeRequest(
         headers: {
           "Content-Type": "application/json",
           "Content-Length": Buffer.byteLength(bodyString),
+          "X-Demo-Role": "admin",
+          ...customHeaders,
         },
       },
       (res) => {
@@ -180,7 +183,11 @@ async function runApiIntegrationTests(): Promise<void> {
   }
 }
 
-runApiIntegrationTests().catch((err) => {
-  console.error("API Integration Test Failed:", err);
-  process.exitCode = 1;
-});
+runApiIntegrationTests()
+  .then(() => {
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error("API Integration Test Failed:", err);
+    process.exit(1);
+  });

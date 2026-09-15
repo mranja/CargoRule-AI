@@ -197,7 +197,11 @@ Carrier agreement mandates express logistics clearance within 24 hours.
   await new Promise<void>((resolve) => server.listen(0, resolve));
   const port = (server.address() as { port: number }).port;
 
-  const res = await fetch(`http://localhost:${port}/api/admin/stats`);
+  const res = await fetch(`http://localhost:${port}/api/admin/stats`, {
+    headers: {
+      "X-Demo-Role": "admin",
+    },
+  });
   assert.strictEqual(res.status, 200, "GET /api/admin/stats must return HTTP 200");
 
   const data = await res.json();
@@ -214,6 +218,7 @@ Carrier agreement mandates express logistics clearance within 24 hours.
   console.log("\n==================================================");
   console.log("ALL ADMIN DASHBOARD STATISTICS TESTS PASSED!");
   console.log("==================================================");
+  process.exit(0);
 }
 
 runAdminStatsTests().catch((error) => {
