@@ -126,4 +126,77 @@ export class StatsController {
       });
     }
   }
+
+  public static async getAdminDashboard(req: Request, res: Response): Promise<void> {
+    return StatsController.getAdminStats(req, res);
+  }
+
+  public static async getAdminActivity(_req: Request, res: Response): Promise<void> {
+    try {
+      const stats = await AdminStatsService.getAdminDashboardStats();
+      res.status(200).json({
+        success: true,
+        activity: stats.activityFeed,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to get admin activity",
+      });
+    }
+  }
+
+  public static async getAdminHealth(_req: Request, res: Response): Promise<void> {
+    try {
+      const stats = await AdminStatsService.getAdminDashboardStats();
+      res.status(200).json({
+        success: true,
+        health: stats.subsystemHealth,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to get admin health",
+      });
+    }
+  }
+
+  public static getAdminQueries(req: Request, res: Response): void {
+    try {
+      const { search, country, carrier } = req.query;
+      let queries = queryHistoryStore.getAll();
+
+      if (typeof search === "string" && search.trim()) {
+        const q = search.toLowerCase().trim();
+        queries = queries.filter(
+          (item) =>
+            item.question.toLowerCase().includes(q) ||
+            (item.answer && item.answer.toLowerCase().includes(q))
+        );
+      }
+
+      if (typeof country === "string" && country !== "all") {
+        queries = queries.filter(
+          (item) => item.country && item.country.toLowerCase() === country.toLowerCase()
+        );
+      }
+
+      if (typeof carrier === "string" && carrier !== "all") {
+        queries = queries.filter(
+          (item) => item.carrier && item.carrier.toLowerCase() === carrier.toLowerCase()
+        );
+      }
+
+      res.status(200).json({
+        success: true,
+        count: queries.length,
+        queries,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to get admin queries",
+      });
+    }
+  }
 }
