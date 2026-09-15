@@ -9,6 +9,9 @@ import { validateUploadInput, ValidationError } from "../src/services/document/v
 import { constructPromptMessages } from "../src/services/rag/answerGeneration";
 import { buildRetrievalContext } from "../src/services/rag/contextBuilder";
 import { RetrievedChunk } from "../src/types/retrieval";
+import { createOpenAICompatibleClient } from "../src/services/document/embedding";
+import { createOpenAICompatibleLLMClient } from "../src/services/llm/llmClient";
+import { AppError, EmbeddingError, LLMError } from "../src/errors/AppError";
 
 async function runSecurityTests() {
   console.log("==================================================");
@@ -342,8 +345,59 @@ async function runSecurityTests() {
     assert(hitRateLimit, "Burst login requests must trigger 429 Too Many Requests");
     console.log("   ✓ Rate limiting triggers HTTP 429 with standard headers");
 
+    // -------------------------------------------------------------
+    // Test 9: Embedding & LLM Failure Handling
+    // -------------------------------------------------------------
+    console.log("9. Testing AI Failure Handling & Error Sanitization...");
+
+    // Test 9.1: Embedding client timeouts & failures throw safe errors
+    const failingEmbeddingClient = createOpenAICompatibleClient({
+      endpoint: "http://127.0.0.1:9999/v1/embeddings",
+      apiKey: "fake-key-secret-123",
+      timeoutMs: 300,
+      maxRetries: 0,
+    });
+
+    let caughtEmbeddingError = false;
+    try {
+      await failingEmbeddingClient.embed(["Test compliance document"]);
+    } catch (err) {
+      caughtEmbeddingError = true;
+      assert(!(err as Error).message.includes("fake-key-secret-123"), "Error must never leak API key");
+    }
+    assert(caughtEmbeddingError, "Embedding failure path must reject safely");
+    console.log("   ✓ Embedding provider outage fails safely without leaking API credentials");
+
+    // Test 9.2: LLM client timeouts & failures throw safe errors
+    const failingLLMClient = createOpenAICompatibleLLMClient({
+      endpoint: "http://127.0.0.1:9999/v1/chat/completions",
+      apiKey: "fake-llm-secret-456",
+      timeoutMs: 300,
+      maxRetries: 0,
+    });
+
+    let caughtLLMError = false;
+    try {
+      await failingLLMClient.generateChatCompletion([
+        { role: "user", content: "Will this fail safely?" },
+      ]);
+    } catch (err) {
+      caughtLLMError = true;
+      assert(!(err as Error).message.includes("fake-llm-secret-456"), "Error must never leak LLM key");
+    }
+    assert(caughtLLMError, "LLM failure path must reject safely");
+    console.log("   ✓ LLM provider outage fails safely without leaking API credentials");
+
+    // Test 9.3: Central error middleware returns predictable contract with stable code
+    const resNotFound = await fetch(`${baseUrl}/documents/non-existent-doc-id-9999`);
+    assert.strictEqual(resNotFound.status, 404);
+    const notFoundJson = (await resNotFound.json()) as { success: boolean; errorDetails?: { code: string } };
+    assert.strictEqual(notFoundJson.success, false);
+    assert.strictEqual(notFoundJson.errorDetails?.code, "NOT_FOUND");
+    console.log("   ✓ Central error handler returns structured JSON contract with stable error codes");
+
     console.log("\n==================================================");
-    console.log("ALL SECURITY AUDIT TESTS PASSED SUCCESSFULLY!");
+    console.log("ALL SECURITY AUDIT & FAILURE TESTS PASSED SUCCESSFULLY!");
     console.log("==================================================");
     process.exit(0);
   } finally {

@@ -124,12 +124,21 @@ export class RAGController {
         createdAt: now,
         status: "failed",
         sources: [],
-        errorMessage: "Internal error generating RAG answer",
+        errorMessage: error instanceof Error ? error.message : "Internal error generating RAG answer",
       });
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Internal error generating RAG answer. Please check service status.";
 
       res.status(500).json({
         success: false,
-        error: "Internal error generating RAG answer. Please check service status.",
+        error: message,
+        errorDetails: {
+          code: "RAG_SERVICE_UNAVAILABLE",
+          message,
+        },
       });
     }
   }

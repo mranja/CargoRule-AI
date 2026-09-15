@@ -95,17 +95,6 @@ class DocumentStoreManager {
     input: IngestDocumentInput,
     vectorStore: VectorStore = getDefaultVectorStore()
   ): Promise<DocumentRecord> {
-    // Validate input payload before processing
-    const validated = validateUploadInput({
-      documentName: input.documentName,
-      fileName: input.fileName,
-      fileType: input.fileType,
-      fileContent: input.fileContent,
-      fileBuffer: input.fileBuffer,
-      effectiveDate: input.effectiveDate,
-      expiryDate: input.expiryDate,
-    });
-
     const documentId = input.documentId || `doc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const now = new Date().toISOString();
     const normalizedCountry = normalizeCountry(input.country);
@@ -113,23 +102,39 @@ class DocumentStoreManager {
 
     const record: DocumentRecord = {
       id: documentId,
-      title: validated.documentName,
+      title: input.documentName || input.fileName || "Untitled Document",
       status: "processing",
       type: input.documentType || "Customs Regulation",
       country: normalizedCountry,
       carrier: normalizedCarrier,
       uploadedAt: now,
-      effectiveDate: validated.effectiveDate,
-      expiryDate: validated.expiryDate,
+      effectiveDate: input.effectiveDate,
+      expiryDate: input.expiryDate,
       version: input.version || "1.0",
       chunkCount: 0,
-      fileName: validated.sanitizedFileName,
-      fileSize: validated.fileSize,
+      fileName: input.fileName || "document",
+      fileSize: input.fileBuffer ? input.fileBuffer.length : (input.fileContent ? Buffer.byteLength(input.fileContent) : 0),
     };
 
     this.documents.set(documentId, record);
 
     try {
+      // Validate input payload before processing
+      const validated = validateUploadInput({
+        documentName: input.documentName,
+        fileName: input.fileName,
+        fileType: input.fileType,
+        fileContent: input.fileContent,
+        fileBuffer: input.fileBuffer,
+        effectiveDate: input.effectiveDate,
+        expiryDate: input.expiryDate,
+      });
+
+      record.title = validated.documentName;
+      record.fileName = validated.sanitizedFileName;
+      record.fileSize = validated.fileSize;
+      record.effectiveDate = validated.effectiveDate;
+      record.expiryDate = validated.expiryDate;
       // 1. Text Extraction
       let rawText = input.fileContent || "";
       if (!rawText && input.fileBuffer) {

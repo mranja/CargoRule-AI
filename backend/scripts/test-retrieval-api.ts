@@ -291,6 +291,7 @@ async function runApiTests(): Promise<void> {
     }
 
     console.log("All Retrieval Pipeline API integration tests passed successfully!");
+    process.exit(0);
   } finally {
     await new Promise<void>((resolve, reject) => {
       server.close((err) => (err ? reject(err) : resolve()));
@@ -300,5 +301,5 @@ async function runApiTests(): Promise<void> {
 
 runApiTests().catch((error) => {
   console.error("Retrieval API test failed:", error);
-  process.exitCode = 1;
+  process.exit(1);
 });

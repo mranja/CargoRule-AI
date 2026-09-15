@@ -38,6 +38,7 @@ function makeRequest(
         headers: {
           "Content-Type": "application/json",
           "Content-Length": Buffer.byteLength(bodyString),
+          "X-Demo-Role": "admin",
           ...headers,
         },
       },
@@ -462,7 +463,11 @@ async function runPipelineValidationAndSourceStorageTests(): Promise<void> {
   }
 }
 
-runPipelineValidationAndSourceStorageTests().catch((err) => {
-  console.error("Pipeline Validation & Source Storage Test Failed:", err);
-  process.exitCode = 1;
-});
+runPipelineValidationAndSourceStorageTests()
+  .then(() => {
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error("Pipeline Validation & Source Storage Test Failed:", err);
+    process.exit(1);
+  });

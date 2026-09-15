@@ -5,9 +5,11 @@ export class HistoryController {
   public static list(req: Request, res: Response): void {
     try {
       const user = req.user;
-      // If user is admin and requests ?all=true, return all queries; otherwise filter by authenticated user
-      const seeAll = user?.role === "admin" && req.query.all === "true";
-      const targetUserId = seeAll ? undefined : (user?.userId || (req.headers["x-user-id"] as string | undefined));
+      // Admins see all queries by default unless an explicit userId filter is passed
+      const targetUserId =
+        user?.role === "admin"
+          ? (req.query.userId as string | undefined)
+          : (user?.userId || (req.headers["x-user-id"] as string | undefined));
 
       const history = queryHistoryStore.getAll(targetUserId);
       res.status(200).json({

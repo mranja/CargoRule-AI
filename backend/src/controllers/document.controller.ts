@@ -23,7 +23,14 @@ export class DocumentController {
       const id = req.params.id as string;
       const doc = documentStore.getDocumentById(id);
       if (!doc) {
-        res.status(404).json({ success: false, error: "Document not found" });
+        res.status(404).json({
+          success: false,
+          error: "Document not found",
+          errorDetails: {
+            code: "NOT_FOUND",
+            message: "Document not found",
+          },
+        });
         return;
       }
 

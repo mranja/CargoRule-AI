@@ -57,7 +57,7 @@ export function constructPromptMessages(
   const sanitizedQuestion = question.trim().replace(/<\/?(?:context|document|system)>/gi, "");
 
   const userContent = [
-    context.context,
+    `Context:\n${context.context}`,
     "",
     `Question: ${sanitizedQuestion}`,
     "",
@@ -122,6 +122,12 @@ export async function executeRAG(
     embeddingClient: options.embeddingClient,
     vectorStore: options.vectorStore,
   });
+
+  if (!retrievalResponse.success) {
+    throw new Error(
+      retrievalResponse.error || "Retrieval service failed to search compliance documents"
+    );
+  }
 
   // Step 2: Context Construction
   const context = buildRetrievalContext(retrievalResponse.retrievedChunks);

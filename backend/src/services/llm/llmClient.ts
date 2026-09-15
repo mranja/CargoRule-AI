@@ -11,6 +11,7 @@ export interface ChatCompletionOptions {
   maxTokens?: number;
   topP?: number;
   timeoutMs?: number;
+  maxRetries?: number;
 }
 
 export interface ChatCompletionUsage {
@@ -80,6 +81,7 @@ export function createOpenAICompatibleLLMClient(
     temperature?: number;
     maxTokens?: number;
     topP?: number;
+    maxRetries?: number;
   } = {}
 ): LLMClient {
   const endpoint = options.endpoint || LLMConfig.apiEndpoint;
@@ -89,6 +91,7 @@ export function createOpenAICompatibleLLMClient(
   const defaultTemperature = options.temperature ?? LLMConfig.temperature;
   const defaultMaxTokens = options.maxTokens ?? LLMConfig.maxTokens;
   const defaultTopP = options.topP ?? LLMConfig.topP;
+  const defaultMaxRetries = options.maxRetries ?? 2;
 
   return {
     async generateChatCompletion(
@@ -102,6 +105,7 @@ export function createOpenAICompatibleLLMClient(
       const maxTokens = callOptions.maxTokens ?? defaultMaxTokens;
       const topP = callOptions.topP ?? defaultTopP;
       const timeoutMs = callOptions.timeoutMs || defaultTimeoutMs;
+      const maxRetries = callOptions.maxRetries ?? defaultMaxRetries;
 
       if (!apiKey) {
         const userMsg = messages.find((m) => m.role === "user")?.content || "";
@@ -137,75 +141,103 @@ export function createOpenAICompatibleLLMClient(
         };
       }
 
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), timeoutMs);
+      let attempt = 0;
+      let lastError: Error | null = null;
 
-      let response: Response;
-      try {
-        response = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
-          },
-          body: JSON.stringify({
-            model,
-            messages,
-            temperature,
-            max_tokens: maxTokens,
-            top_p: topP,
-            stream: false,
-          }),
-          signal: controller.signal,
-        });
-      } catch (error) {
-        if (error instanceof Error && error.name === "AbortError") {
-          throw new Error(`LLM request timed out after ${timeoutMs}ms`);
-        }
-        throw error;
-      } finally {
-        clearTimeout(timeout);
-      }
+      while (attempt <= maxRetries) {
+        attempt++;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
-      if (!response.ok) {
-        let sanitizedError = "External AI service returned an error";
         try {
-          const errorBody = await response.text();
-          // Extract general error message if JSON, avoid leaking headers or keys
-          try {
-            const parsed = JSON.parse(errorBody);
-            if (parsed.error?.message && typeof parsed.error.message === "string") {
-              sanitizedError = parsed.error.message.slice(0, 200);
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+              model,
+              messages,
+              temperature,
+              max_tokens: maxTokens,
+              top_p: topP,
+              stream: false,
+            }),
+            signal: controller.signal,
+          });
+
+          if (!response.ok) {
+            const status = response.status;
+            let sanitizedError = "External AI service returned an error";
+            try {
+              const errorBody = await response.text();
+              const parsed = JSON.parse(errorBody);
+              if (parsed.error?.message && typeof parsed.error.message === "string") {
+                sanitizedError = parsed.error.message.slice(0, 200);
+              }
+            } catch {
+              // Ignore read error
             }
-          } catch {
-            sanitizedError = errorBody.slice(0, 100);
+
+            // Non-retryable: 400 Bad Request, 401 Unauthorized, 403 Forbidden
+            if (status === 400 || status === 401 || status === 403) {
+              throw new Error(
+                `LLM request failed with status ${status}: ${sanitizedError}`
+              );
+            }
+
+            // Transient error (429 Rate Limit, 500, 502, 503, 504) -> retry if attempts remain
+            if (attempt <= maxRetries && (status === 429 || status >= 500)) {
+              await new Promise((resolve) => setTimeout(resolve, attempt * 300));
+              continue;
+            }
+
+            throw new Error(
+              `LLM request failed with status ${status}: ${sanitizedError}`
+            );
           }
-        } catch {
-          // Ignore read error
+
+          const payload = (await response.json()) as OpenAIChatResponse;
+          const choice = payload.choices?.[0];
+
+          if (!choice?.message?.content || !choice.message.content.trim()) {
+            throw new Error("LLM service returned an empty or invalid response");
+          }
+
+          return {
+            content: choice.message.content,
+            model: payload.model || model,
+            usage: payload.usage
+              ? {
+                  promptTokens: payload.usage.prompt_tokens,
+                  completionTokens: payload.usage.completion_tokens,
+                  totalTokens: payload.usage.total_tokens,
+                }
+              : undefined,
+          };
+        } catch (error) {
+          if (error instanceof Error && error.name === "AbortError") {
+            lastError = new Error(`LLM request timed out after ${timeoutMs}ms`);
+          } else {
+            lastError = error instanceof Error ? error : new Error(String(error));
+          }
+
+          const msg = lastError.message;
+          if (msg.includes("400") || msg.includes("401") || msg.includes("403")) {
+            throw lastError; // Do not retry client auth/request errors
+          }
+
+          if (attempt > maxRetries) {
+            throw lastError;
+          }
+          await new Promise((resolve) => setTimeout(resolve, attempt * 300));
+        } finally {
+          clearTimeout(timeout);
         }
-        throw new Error(
-          `LLM request failed with status ${response.status}: ${sanitizedError}`
-        );
       }
 
-      const payload = (await response.json()) as OpenAIChatResponse;
-      const choice = payload.choices?.[0];
-
-      if (!choice?.message?.content) {
-        throw new Error("LLM service returned an empty or invalid response");
-      }
-
-      return {
-        content: choice.message.content,
-        model: payload.model || model,
-        usage: payload.usage
-          ? {
-              promptTokens: payload.usage.prompt_tokens,
-              completionTokens: payload.usage.completion_tokens,
-              totalTokens: payload.usage.total_tokens,
-            }
-          : undefined,
-      };
+      throw lastError || new Error("Failed to communicate with LLM provider");
     },
   };
 }

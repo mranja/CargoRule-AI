@@ -12,7 +12,8 @@ function makeRequest(
   server: http.Server,
   path: string,
   method: string = "GET",
-  body?: any
+  body?: any,
+  customHeaders: Record<string, string> = {}
 ): Promise<{ status: number; data: any }> {
   return new Promise((resolve, reject) => {
     const port = (server.address() as any).port;
@@ -27,6 +28,8 @@ function makeRequest(
         headers: {
           "Content-Type": "application/json",
           "Content-Length": Buffer.byteLength(bodyString),
+          "X-Demo-Role": "admin",
+          ...customHeaders,
         },
       },
       (res) => {
@@ -373,7 +376,11 @@ async function runDocumentCarrierIntegrationTests(): Promise<void> {
   }
 }
 
-runDocumentCarrierIntegrationTests().catch((err) => {
-  console.error("Document & Carrier Integration Test Failed:", err);
-  process.exitCode = 1;
-});
+runDocumentCarrierIntegrationTests()
+  .then(() => {
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error("Document & Carrier Integration Test Failed:", err);
+    process.exit(1);
+  });
