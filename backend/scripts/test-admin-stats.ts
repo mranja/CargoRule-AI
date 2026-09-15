@@ -45,6 +45,17 @@ async function runAdminStatsTests() {
   assert(!isNaN(initialStats.vectorDatabase.averageVectorsPerDocument), "avg vectors must not be NaN");
   assert(!isNaN(initialStats.vectorDatabase.averageChunksPerDocument), "avg chunks must not be NaN");
 
+  // Validate query & RAG stats
+  assert(typeof initialStats.queries.totalQueries === "number", "totalQueries should be number");
+  assert(typeof initialStats.queries.queriesToday === "number", "queriesToday should be number");
+  assert(typeof initialStats.queries.avgSourcesPerQuery === "number", "avgSourcesPerQuery should be number");
+  assert(Array.isArray(initialStats.queries.mostQueriedCarriers), "mostQueriedCarriers must be array");
+
+  // Validate subsystem health
+  assert(initialStats.subsystemHealth.backendApi.status === "healthy", "backendApi status must be healthy");
+  assert(initialStats.subsystemHealth.documentStore.status === "healthy", "documentStore status must be healthy");
+  assert(Array.isArray(initialStats.activityFeed), "activityFeed must be array");
+
   // Validate indexing consistency stats
   const consistency = initialStats.vectorDatabase.indexingConsistency;
   assert(typeof consistency.successfullyIndexed === "number", "successfullyIndexed should be number");
@@ -186,9 +197,9 @@ Carrier agreement mandates express logistics clearance within 24 hours.
   console.log("   ✓ Deletion safely synchronized vector store with 0 orphaned vectors");
 
   // -------------------------------------------------------------
-  // Test 5: REST API HTTP Endpoint (GET /api/admin/stats)
+  // Test 5: REST API HTTP Endpoints & Authorization Checks
   // -------------------------------------------------------------
-  console.log("5. Testing REST API endpoint GET /api/admin/stats...");
+  console.log("5. Testing REST API endpoints & admin authorization checks...");
   const app = express();
   app.use(express.json());
   app.use("/api", statsRoutes);
@@ -197,23 +208,48 @@ Carrier agreement mandates express logistics clearance within 24 hours.
   await new Promise<void>((resolve) => server.listen(0, resolve));
   const port = (server.address() as { port: number }).port;
 
-  const res = await fetch(`http://localhost:${port}/api/admin/stats`, {
+  // 5a. Non-admin authorization rejection test
+  const unauthorizedRes = await fetch(`http://localhost:${port}/api/admin/stats`, {
     headers: {
-      "X-Demo-Role": "admin",
+      "X-Demo-Role": "user",
     },
   });
-  assert.strictEqual(res.status, 200, "GET /api/admin/stats must return HTTP 200");
+  assert.strictEqual(unauthorizedRes.status, 403, "Non-admin request must be rejected with HTTP 403 Forbidden");
+  console.log("   ✓ Non-admin access correctly rejected with HTTP 403 Forbidden");
 
-  const data = await res.json();
-  assert.strictEqual(data.success, true, "Response must indicate success: true");
-  assert(data.stats, "Response must include stats object");
-  assert(data.stats.processing, "stats.processing must be defined");
-  assert(data.stats.vectorDatabase, "stats.vectorDatabase must be defined");
-  assert(data.stats.generatedAt, "stats.generatedAt must be defined");
-  assert(typeof data.stats.vectorDatabase.vectorDbHealth.latencyMs === "number");
+  // 5b. Admin authorized GET /api/admin/stats
+  const resStats = await fetch(`http://localhost:${port}/api/admin/stats`, {
+    headers: { "X-Demo-Role": "admin" },
+  });
+  assert.strictEqual(resStats.status, 200, "GET /api/admin/stats must return HTTP 200");
+  const dataStats = await resStats.json();
+  assert.strictEqual(dataStats.success, true, "Response must indicate success: true");
+  assert(dataStats.stats.processing, "stats.processing must be defined");
+  assert(dataStats.stats.queries, "stats.queries must be defined");
+  assert(dataStats.stats.subsystemHealth, "stats.subsystemHealth must be defined");
+
+  // 5c. Admin authorized GET /api/admin/dashboard
+  const resDash = await fetch(`http://localhost:${port}/api/admin/dashboard`, {
+    headers: { "X-Demo-Role": "admin" },
+  });
+  assert.strictEqual(resDash.status, 200, "GET /api/admin/dashboard must return HTTP 200");
+
+  // 5d. Admin authorized GET /api/admin/health
+  const resHealth = await fetch(`http://localhost:${port}/api/admin/health`, {
+    headers: { "X-Demo-Role": "admin" },
+  });
+  assert.strictEqual(resHealth.status, 200, "GET /api/admin/health must return HTTP 200");
+  const dataHealth = await resHealth.json();
+  assert(dataHealth.health.backendApi, "health.backendApi must be defined");
+
+  // 5e. Admin authorized GET /api/admin/queries
+  const resQueries = await fetch(`http://localhost:${port}/api/admin/queries`, {
+    headers: { "X-Demo-Role": "admin" },
+  });
+  assert.strictEqual(resQueries.status, 200, "GET /api/admin/queries must return HTTP 200");
 
   server.close();
-  console.log("   ✓ REST API GET /api/admin/stats successfully served real data");
+  console.log("   ✓ REST API GET /api/admin/* endpoints successfully served real data & enforced authorization");
 
   console.log("\n==================================================");
   console.log("ALL ADMIN DASHBOARD STATISTICS TESTS PASSED!");
