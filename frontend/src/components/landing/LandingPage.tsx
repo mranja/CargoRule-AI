@@ -140,12 +140,12 @@ export const LandingPage: React.FC = () => {
               href="/login"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-6 py-3.5 text-sm font-semibold text-zinc-800 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 transition-all shadow-xs"
             >
-              <span>Live Interactive Demo</span>
+              <span>Sign In & Verify Compliance</span>
               <IconSparkles size={16} className="text-blue-600 dark:text-blue-400" />
             </Link>
           </div>
 
-          {/* Interactive Hero Query Demo Card */}
+          {/* Interactive Hero Query Explorer Card */}
           <div className="mt-14 max-w-4xl mx-auto rounded-2xl border border-zinc-200 bg-white/95 p-5 sm:p-7 shadow-2xl dark:border-zinc-800 dark:bg-zinc-900/95 text-left">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-100 dark:border-zinc-800 pb-4 mb-4">
               <div className="flex items-center gap-2.5">

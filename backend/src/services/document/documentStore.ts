@@ -78,6 +78,9 @@ export function extractDocumentSummary(
     if (
       lower.startsWith("test fixture:") ||
       lower.startsWith("document classification:") ||
+      lower.startsWith("regulatory authority:") ||
+      lower.startsWith("operational protocol:") ||
+      lower.startsWith("document reference:") ||
       lower.startsWith("document id:") ||
       lower.startsWith("country:") ||
       lower.startsWith("carrier:") ||
