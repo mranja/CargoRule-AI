@@ -25,6 +25,8 @@ export interface DocumentRecord {
   chunkCount: number;
   fileName?: string;
   fileSize?: number;
+  summary?: string;
+  keyRequirements?: string[];
   errorMessage?: string;
 }
 
@@ -53,6 +55,125 @@ export interface UpdateDocumentInput {
   effectiveDate?: string;
   expiryDate?: string;
   version?: string;
+}
+
+export interface DocumentSummaryResult {
+  summary: string;
+  keyRequirements: string[];
+}
+
+export function extractDocumentSummary(
+  text: string,
+  title: string,
+  country?: string,
+  carrier?: string
+): DocumentSummaryResult {
+  // Strip fixture metadata headers while preserving empty lines for paragraph separation
+  const rawLines = text.split(/\r?\n/);
+  const cleanLines: string[] = [];
+
+  for (const rawLine of rawLines) {
+    const line = rawLine.trim();
+    const lower = line.toLowerCase();
+    if (
+      lower.startsWith("test fixture:") ||
+      lower.startsWith("document classification:") ||
+      lower.startsWith("document id:") ||
+      lower.startsWith("country:") ||
+      lower.startsWith("carrier:") ||
+      lower.startsWith("document type:") ||
+      lower.startsWith("effective date:") ||
+      lower.startsWith("version:")
+    ) {
+      continue;
+    }
+    cleanLines.push(line);
+  }
+
+  const cleanedText = cleanLines.join("\n");
+  // Split into paragraphs by 2 or more newlines
+  const paragraphs = cleanedText.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+
+  let summary = "";
+  const keyRequirements: string[] = [];
+
+  // 1. First pass: look specifically for SECTION 1: OVERVIEW / SCOPE / INTRODUCTION
+  for (const para of paragraphs) {
+    const lines = para.split("\n").map((l) => l.trim()).filter(Boolean);
+    const firstLine = lines[0] || "";
+
+    if (/overview|scope|summary|purpose|introduction/i.test(firstLine)) {
+      const bodyLines = lines.slice(1).filter((l) => !/^[A-Z0-9\s_:-]+:?$/i.test(l));
+      if (bodyLines.length > 0) {
+        summary = bodyLines.join(" ");
+        break;
+      }
+    }
+  }
+
+  // 2. Second pass: extract key requirements / numbered list items / bullet points
+  for (const para of paragraphs) {
+    const lines = para.split("\n").map((l) => l.trim()).filter(Boolean);
+    for (const line of lines) {
+      const match = line.match(/^(?:(?:\d+\.|\*|-|•)\s+)(.+)$/);
+      if (match) {
+        const item = match[1].trim();
+        if (item.length > 15 && keyRequirements.length < 8 && !keyRequirements.includes(item)) {
+          keyRequirements.push(item);
+        }
+      } else if (
+        /^(?:Commercial Invoice|Packing List|Customs Declaration|Certificate of Origin|Tariff|Import duty|Value-Added Tax|VAT|Inner Packaging|Outer Packaging|Cushioning|Gross Weight|Lithium Battery|Shipper's Declaration|Safety Data Sheet|SDS|DELTA-G|EUR\.1|Triman|PHYTO|Customs audits|Documentation retention)/i.test(line) &&
+        line.includes(":")
+      ) {
+        if (line.length > 20 && keyRequirements.length < 8 && !keyRequirements.includes(line)) {
+          keyRequirements.push(line);
+        }
+      }
+    }
+  }
+
+  // If summary not found, find the first non-header, non-bullet paragraph
+  if (!summary) {
+    for (const para of paragraphs) {
+      const lines = para.split("\n").map((l) => l.trim()).filter(Boolean);
+      const firstLine = lines[0] || "";
+      if (/^section\s+\d+/i.test(firstLine)) {
+        const bodyLines = lines.slice(1);
+        if (bodyLines.length > 0 && !bodyLines[0].startsWith("1.")) {
+          summary = bodyLines.join(" ");
+          break;
+        }
+      } else if (!firstLine.startsWith("1.") && !firstLine.startsWith("-") && firstLine.length > 30) {
+        summary = lines.join(" ");
+        break;
+      }
+    }
+  }
+
+  // Fallback if still empty
+  if (!summary) {
+    const entity = country ? `for ${country}` : carrier ? `for ${carrier}` : "for global logistics lanes";
+    summary = `Customs clearance protocols, import statutory obligations, and operational compliance specifications outlined in ${title} ${entity}.`;
+  }
+
+  // Fallback keyRequirements if empty
+  if (keyRequirements.length === 0) {
+    const sentences = cleanedText.match(/[^.!?]+[.!?]+/g) || [];
+    for (const s of sentences) {
+      const trimmed = s.trim();
+      if (
+        /\b(must|required|mandatory|restricted|prohibited|requires|applies to|declaration|inspection)\b/i.test(trimmed) &&
+        trimmed.length >= 25 &&
+        trimmed.length <= 250
+      ) {
+        if (keyRequirements.length < 6 && !keyRequirements.includes(trimmed)) {
+          keyRequirements.push(trimmed);
+        }
+      }
+    }
+  }
+
+  return { summary, keyRequirements };
 }
 
 class DocumentStoreManager {
@@ -182,7 +303,15 @@ class DocumentStoreManager {
       // 5. Vector Store Upsert
       await vectorStore.upsert(chunks, embeddings);
 
-      // 6. Update Record Status
+      // 6. Update Record Status & Extract Content Summary
+      const { summary, keyRequirements } = extractDocumentSummary(
+        cleaned,
+        record.title,
+        record.country,
+        record.carrier
+      );
+      record.summary = summary;
+      record.keyRequirements = keyRequirements;
       record.status = "indexed";
       record.chunkCount = chunks.length;
       this.documentChunks.set(documentId, chunks);

@@ -1,6 +1,8 @@
 import React from 'react';
 import { EmptyState } from '../common/EmptyState';
 import { IconCarriers, IconGlobe } from '../common/Icons';
+import { getCountryDisplayName } from '@/utils/tradeConstants';
+import { CountryFlag } from '../common/CountryFlag';
 
 interface CoverageSectionProps {
   countries?: string[];
@@ -36,9 +38,10 @@ export const CoverageSection: React.FC<CoverageSectionProps> = ({
             {countries.map((c, i) => (
               <span
                 key={i}
-                className="inline-flex items-center rounded-lg bg-zinc-100 px-3 py-1.5 text-xs font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                className="inline-flex items-center gap-2 rounded-lg bg-zinc-100 px-3 py-1.5 text-xs font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
               >
-                {c}
+                <CountryFlag country={c} size="sm" />
+                <span>{getCountryDisplayName(c)}</span>
               </span>
             ))}
           </div>

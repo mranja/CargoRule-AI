@@ -2,6 +2,7 @@ import React from 'react';
 import { UploadFormErrors, UploadMetadata } from '@/types';
 import { Input } from '../ui/Input';
 import { Select, SelectOption } from '../ui/Select';
+import { MAJOR_COUNTRIES } from '@/utils/tradeConstants';
 
 export interface DocumentMetadataFormProps {
   metadata: UploadMetadata;
@@ -11,17 +12,11 @@ export interface DocumentMetadataFormProps {
 }
 
 const countryOptions: SelectOption[] = [
-  { value: 'Global', label: 'Global / All Regions' },
-  { value: 'Germany', label: 'Germany (DE)' },
-  { value: 'India', label: 'India (IN)' },
-  { value: 'United States', label: 'United States (US)' },
-  { value: 'United Kingdom', label: 'United Kingdom (UK)' },
-  { value: 'Singapore', label: 'Singapore (SG)' },
-  { value: 'China', label: 'China (CN)' },
-  { value: 'France', label: 'France (FR)' },
-  { value: 'Netherlands', label: 'Netherlands (NL)' },
-  { value: 'Japan', label: 'Japan (JP)' },
-  { value: 'Australia', label: 'Australia (AU)' },
+  { value: 'Global', label: '🌐 Global / All Regions' },
+  ...MAJOR_COUNTRIES.filter((c) => c.code !== 'Global').map((c) => ({
+    value: c.name,
+    label: c.name,
+  })),
   { value: 'Other', label: 'Other Country' },
 ];
 

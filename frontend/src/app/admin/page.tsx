@@ -17,8 +17,11 @@ import {
 } from '@/components/common/Icons';
 import { getAdminStats } from '@/services/api';
 import { AdminDashboardStats } from '@/types';
+import { useAuth } from '@/context/AuthContext';
+import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 
 export default function AdminPage() {
+  const { user } = useAuth();
   const [stats, setStats] = useState<AdminDashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -44,8 +47,20 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    loadStats();
-  }, [loadStats]);
+    if (user?.role === 'admin') {
+      loadStats();
+    } else if (user) {
+      setIsLoading(false);
+    }
+  }, [user, loadStats]);
+
+  if (user && user.role !== 'admin') {
+    return (
+      <DashboardLayout>
+        <AdminAccessDenied />
+      </DashboardLayout>
+    );
+  }
 
   const processing = stats?.processing;
   const vectorDb = stats?.vectorDatabase;

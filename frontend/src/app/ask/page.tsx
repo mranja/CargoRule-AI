@@ -1,11 +1,9 @@
 'use client';
 
 import React, { useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { AskQueryFilters, ChatMessageItem } from '@/types';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { PageHeader } from '@/components/ui/PageHeader';
-import { SuggestedQuestions } from '@/components/ask/SuggestedQuestions';
 import { Alert } from '@/components/ui/Alert';
 import { askQuestion } from '@/services/api';
 import { ChatThread } from '@/components/ask/ChatThread';
@@ -13,6 +11,7 @@ import { ChatInputBar } from '@/components/ask/ChatInputBar';
 
 function AskContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const initialParamQuery = searchParams.get('q') || '';
   const initialParamCarrier = searchParams.get('carrier') || 'all';
   const initialParamCountry = searchParams.get('country') || 'all';
@@ -47,6 +46,7 @@ function AskContent() {
     setQuestion('');
     setFilters({ country: 'all', carrier: 'all', documentType: 'all' });
     setErrorMessage(null);
+    router.replace('/ask');
   };
 
   const handleSubmit = async () => {
@@ -106,27 +106,18 @@ function AskContent() {
   };
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-8rem)] justify-between space-y-6">
-      <div className="space-y-6">
-        <PageHeader
-          title="Ask CargoRule"
-          badge="RAG POWERED"
-          description="Ask questions about customs regulations, shipping policies, and carrier agreements."
-        />
-
+    <div className="flex flex-col h-full max-h-full overflow-hidden justify-between space-y-2">
       {/* Error Alert Display */}
       {errorMessage && (
-        <Alert variant="danger" title="Query Execution Failed">
-          {errorMessage}
-        </Alert>
+        <div className="max-w-4xl mx-auto w-full shrink-0">
+          <Alert variant="danger" title="Query Execution Failed">
+            {errorMessage}
+          </Alert>
+        </div>
       )}
 
-      {/* Suggested Questions Section */}
-      <SuggestedQuestions
-        onSelectQuestion={handleSelectSuggestedQuestion}
-        disabled={isLoading}
-      />
-        {/* Scrollable Chat Message Thread */}
+      {/* Chat Thread Stream */}
+      <div className="flex-1 min-h-0 overflow-y-auto py-1 flex flex-col">
         <ChatThread
           messages={messages}
           isLoading={isLoading}
@@ -134,17 +125,19 @@ function AskContent() {
         />
       </div>
 
-      {/* Pinned Bottom Chat Query Input Bar */}
-      <ChatInputBar
-        question={question}
-        onQuestionChange={setQuestion}
-        filters={filters}
-        onFiltersChange={handleFiltersChange}
-        onSubmit={handleSubmit}
-        onClearThread={handleClearThread}
-        isLoading={isLoading}
-        hasMessages={messages.length > 0}
-      />
+      {/* Pinned Bottom Chat Query Dock */}
+      <div className="shrink-0 pt-1">
+        <ChatInputBar
+          question={question}
+          onQuestionChange={setQuestion}
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+          onSubmit={handleSubmit}
+          onClearThread={handleClearThread}
+          isLoading={isLoading}
+          hasMessages={messages.length > 0}
+        />
+      </div>
     </div>
   );
 }
@@ -155,7 +148,7 @@ export default function AskPage() {
       <Suspense
         fallback={
           <div className="p-8 text-center text-xs text-zinc-400 font-medium">
-            Loading CargoRule AI Assistant...
+            Loading CargoRule AI Copilot...
           </div>
         }
       >

@@ -3,6 +3,7 @@ import {
   AskQueryPayload,
   AskQueryResponse,
   DocumentRecord,
+  DocumentChunkRecord,
   QueryRecord,
   UploadMetadata,
 } from '@/types';
@@ -88,6 +89,36 @@ export async function getDocuments(): Promise<DocumentRecord[]> {
   } catch (error) {
     console.warn('Backend documents API unavailable, returning empty list:', error);
     return [];
+  }
+}
+
+/**
+ * Fetches a single document and its parsed vector chunks by ID.
+ */
+export async function getDocumentById(
+  id: string
+): Promise<{ document: DocumentRecord; chunks: DocumentChunkRecord[] } | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/documents/${encodeURIComponent(id)}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = await response.json();
+    return {
+      document: data.document,
+      chunks: data.chunks || [],
+    };
+  } catch (error) {
+    console.warn(`Failed to fetch document by id ${id}:`, error);
+    return null;
   }
 }
 
@@ -356,3 +387,74 @@ export async function getAdminStats(): Promise<AdminDashboardStats | null> {
   }
 }
 
+/**
+ * Authenticates user credentials or demo role.
+ */
+export async function loginUser(payload: {
+  email?: string;
+  password?: string;
+  role?: 'admin' | 'user';
+}): Promise<{
+  success: boolean;
+  token: string;
+  user: { userId: string; email: string; role: 'admin' | 'user'; name?: string };
+}> {
+  const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || `Login failed (HTTP ${response.status})`);
+  }
+
+  return data;
+}
+
+/**
+ * Registers a new compliance user account.
+ */
+export async function registerUser(payload: {
+  name: string;
+  email: string;
+  password?: string;
+  role?: 'admin' | 'user';
+}): Promise<{
+  success: boolean;
+  token: string;
+  user: { userId: string; email: string; role: 'admin' | 'user'; name?: string };
+}> {
+  const response = await fetch(`${API_BASE_URL}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || `Registration failed (HTTP ${response.status})`);
+  }
+
+  return data;
+}
+
+/**
+ * Retrieves the currently authenticated user session.
+ */
+export async function getAuthMe(): Promise<{ userId: string; email: string; role: 'admin' | 'user'; name?: string } | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      method: 'GET',
+      headers: getAuthHeaders(false),
+      cache: 'no-store',
+    });
+
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.user || null;
+  } catch {
+    return null;
+  }
+}

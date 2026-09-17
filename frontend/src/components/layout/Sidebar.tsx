@@ -11,6 +11,7 @@ import {
   renderIconByName,
 } from '../common/Icons';
 import { Avatar } from '../ui/Avatar';
+import { useAuth } from '@/context/AuthContext';
 
 export const mainNavItems: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', iconName: 'dashboard' },
@@ -34,6 +35,16 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile }) => {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
+
+  const displayName = user?.name || (user?.role === 'admin' ? 'Compliance Admin' : 'Operations Specialist');
+  const displayEmail = user?.email || (user?.role === 'admin' ? 'admin@cargorule.ai' : 'ops@cargorule.ai');
+  const initials = displayName
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || 'CR';
 
   const isLinkActive = (href: string) => {
     if (href === '/dashboard' && (pathname === '/' || pathname === '/dashboard')) {
@@ -110,36 +121,39 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
               {renderNavList(mainNavItems)}
             </div>
 
-            <div>
-              <div className="px-3 mb-2 text-[10px] font-semibold tracking-wider text-zinc-400 uppercase flex items-center justify-between">
-                <span>Admin Controls</span>
-                <span className="text-[9px] bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 px-1.5 py-0.5 rounded font-bold">
-                  ADMIN
-                </span>
+            {user?.role === 'admin' && (
+              <div>
+                <div className="px-3 mb-2 text-[10px] font-semibold tracking-wider text-zinc-400 uppercase flex items-center justify-between">
+                  <span>Admin Controls</span>
+                  <span className="text-[9px] bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 px-1.5 py-0.5 rounded font-bold">
+                    ADMIN
+                  </span>
+                </div>
+                {renderNavList(adminNavItems)}
               </div>
-              {renderNavList(adminNavItems)}
-            </div>
+            )}
           </nav>
 
           {/* Footer User Profile & Logout */}
           <div className="p-4 border-t border-zinc-100 dark:border-zinc-800/60 bg-zinc-50/50 dark:bg-zinc-950/30">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3 overflow-hidden">
-                <Avatar size="sm" initials="OP" name="Operations User" />
+                <Avatar size="sm" initials={initials} name={displayName} />
                 <div className="flex flex-col truncate">
                   <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">
-                    Operations User
+                    {displayName}
                   </span>
                   <span className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate">
-                    ops@cargorule.ai
+                    {displayEmail}
                   </span>
                 </div>
               </div>
               <button
                 type="button"
+                onClick={logout}
                 title="Logout"
                 aria-label="Logout"
-                className="p-1.5 text-zinc-400 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-200 rounded-lg hover:bg-zinc-200/60 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                className="p-1.5 text-zinc-400 hover:text-rose-600 dark:text-zinc-500 dark:hover:text-rose-400 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
               >
                 <IconLogout size={16} />
               </button>
@@ -190,35 +204,38 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
             {renderNavList(mainNavItems)}
           </div>
 
-          <div>
-            <div className="px-3 mb-2 text-[10px] font-semibold tracking-wider text-zinc-400 uppercase flex items-center justify-between">
-              <span>Admin Controls</span>
-              <span className="text-[9px] bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 px-1.5 py-0.5 rounded font-bold">
-                ADMIN
-              </span>
+          {user?.role === 'admin' && (
+            <div>
+              <div className="px-3 mb-2 text-[10px] font-semibold tracking-wider text-zinc-400 uppercase flex items-center justify-between">
+                <span>Admin Controls</span>
+                <span className="text-[9px] bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 px-1.5 py-0.5 rounded font-bold">
+                  ADMIN
+                </span>
+              </div>
+              {renderNavList(adminNavItems)}
             </div>
-            {renderNavList(adminNavItems)}
-          </div>
+          )}
         </nav>
 
         <div className="p-4 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/30">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 overflow-hidden">
-              <Avatar size="sm" initials="OP" name="Operations User" />
+              <Avatar size="sm" initials={initials} name={displayName} />
               <div className="flex flex-col truncate">
                 <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">
-                  Operations User
+                  {displayName}
                 </span>
                 <span className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate">
-                  ops@cargorule.ai
+                  {displayEmail}
                 </span>
               </div>
             </div>
             <button
               type="button"
+              onClick={logout}
               title="Logout"
               aria-label="Logout"
-              className="p-1.5 text-zinc-400 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-200 rounded-lg hover:bg-zinc-200/60 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+              className="p-1.5 text-zinc-400 hover:text-rose-600 dark:text-zinc-500 dark:hover:text-rose-400 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
             >
               <IconLogout size={16} />
             </button>
