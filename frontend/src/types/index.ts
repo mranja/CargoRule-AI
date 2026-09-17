@@ -267,8 +267,42 @@ export interface DocumentVectorStats {
   };
 }
 
+export interface QueryAnalyticsStats {
+  totalQueries: number;
+  queriesToday: number;
+  queriesThisWeek: number;
+  queriesWithSources: number;
+  zeroSourceQueries: number;
+  totalSourcesRetrieved: number;
+  avgSourcesPerQuery: number;
+  mostQueriedCarriers: Array<{ name: string; count: number }>;
+  mostQueriedCountries: Array<{ name: string; count: number }>;
+  queriesOverTime: Array<{ date: string; count: number }>;
+}
+
+export interface SubsystemHealth {
+  backendApi: { status: 'healthy' | 'degraded' | 'error'; uptime?: number; latencyMs?: number };
+  documentStore: { status: 'healthy' | 'degraded' | 'error'; totalDocuments: number; indexedDocuments: number };
+  vectorDatabase: { status: 'connected' | 'degraded' | 'error'; latencyMs: number; totalVectors: number; lastChecked: string };
+  embeddingEngine: { status: 'healthy' | 'degraded' | 'mock' | 'error'; mode: string; dimensions: number };
+  llmSubsystem: { status: 'healthy' | 'degraded' | 'configured' | 'mock' | 'error'; model: string };
+}
+
+export interface UnifiedActivityItem {
+  id: string;
+  type: 'document_upload' | 'document_processed' | 'document_failed' | 'document_updated' | 'document_deleted' | 'query_executed';
+  title: string;
+  description: string;
+  timestamp: string;
+  status?: 'indexed' | 'processing' | 'error' | 'completed' | 'failed' | 'processed';
+  metadata?: Record<string, unknown>;
+}
+
 export interface AdminDashboardStats {
   processing: DocumentProcessingStats;
   vectorDatabase: DocumentVectorStats;
+  queries?: QueryAnalyticsStats;
+  subsystemHealth?: SubsystemHealth;
+  activityFeed?: UnifiedActivityItem[];
   generatedAt: string;
 }

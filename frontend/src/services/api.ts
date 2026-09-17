@@ -376,12 +376,18 @@ export async function getAdminStats(): Promise<AdminDashboardStats | null> {
     });
 
     if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        throw new Error(`ACCESS_DENIED:${response.status}`);
+      }
       throw new Error(`Failed to fetch admin stats (HTTP ${response.status})`);
     }
 
     const data = await response.json();
     return data.stats || null;
   } catch (error) {
+    if (error instanceof Error && error.message.startsWith('ACCESS_DENIED:')) {
+      throw error;
+    }
     console.warn('Backend admin stats API unavailable:', error);
     return null;
   }
@@ -458,3 +464,77 @@ export async function getAuthMe(): Promise<{ userId: string; email: string; role
     return null;
   }
 }
+ * Alias for fetching admin dashboard stats.
+ */
+export async function getAdminDashboard(): Promise<AdminDashboardStats | null> {
+  return getAdminStats();
+}
+
+/**
+ * Fetches subsystem health metrics for admin dashboard.
+ */
+export async function getAdminHealth(): Promise<Record<string, unknown> | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/health`, {
+      method: 'GET',
+      headers: getAuthHeaders(true),
+      cache: 'no-store',
+    });
+
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.health || null;
+  } catch (error) {
+    console.warn('Backend admin health API unavailable:', error);
+    return null;
+  }
+}
+
+/**
+ * Fetches activity feed audit records for admin dashboard.
+ */
+export async function getAdminActivity(): Promise<Array<Record<string, unknown>>> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/activity`, {
+      method: 'GET',
+      headers: getAuthHeaders(true),
+      cache: 'no-store',
+    });
+
+    if (!response.ok) return [];
+    const data = await response.json();
+    return data.activity || [];
+  } catch (error) {
+    console.warn('Backend admin activity API unavailable:', error);
+    return [];
+  }
+}
+
+/**
+ * Fetches query history for admin inspection.
+ */
+export async function getAdminQueries(params?: { search?: string; country?: string; carrier?: string }): Promise<QueryRecord[]> {
+  try {
+    const queryParams = new URLSearchParams();
+    if (params?.search) queryParams.append('search', params.search);
+    if (params?.country && params.country !== 'all') queryParams.append('country', params.country);
+    if (params?.carrier && params.carrier !== 'all') queryParams.append('carrier', params.carrier);
+
+    const queryString = queryParams.toString();
+    const url = `${API_BASE_URL}/admin/queries${queryString ? `?${queryString}` : ''}`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: getAuthHeaders(true),
+      cache: 'no-store',
+    });
+
+    if (!response.ok) return [];
+    const data = await response.json();
+    return data.queries || [];
+  } catch (error) {
+    console.warn('Backend admin queries API unavailable:', error);
+    return [];
+  }
+}
+
