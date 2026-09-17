@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
@@ -9,7 +9,7 @@ import { IconAdmin, IconDashboard, IconAsk } from '../common/Icons';
 
 export const AdminAccessDenied: React.FC = () => {
   const router = useRouter();
-  const { user, loginAsRole } = useAuth();
+  const { user } = useAuth();
 
   return (
     <div className="py-12 px-4 max-w-2xl mx-auto">
@@ -54,12 +54,11 @@ export const AdminAccessDenied: React.FC = () => {
             variant="ghost"
             size="md"
             onClick={() => {
-              loginAsRole('admin');
-              router.refresh();
+              router.push('/login');
             }}
-            className="text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/40 text-xs font-semibold"
+            className="text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800 text-xs font-semibold"
           >
-            Switch to Admin Demo Account →
+            Sign In with Administrator Account →
           </Button>
         </div>
       </Card>

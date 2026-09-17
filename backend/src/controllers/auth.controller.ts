@@ -4,50 +4,39 @@ import { AuthService } from "../services/auth/auth.service";
 export class AuthController {
   /**
    * POST /api/auth/login
-   * Authenticates user credentials or demo role, returns signed Bearer JWT token.
+   * Authenticates user credentials with password verification and returns signed Bearer JWT token.
    */
   public static login(req: Request, res: Response): void {
-    const { email, password, role } = req.body || {};
+    const { email, password } = req.body || {};
 
-    // Validate inputs
-    if (!email && !role) {
+    if (!email || !password) {
       res.status(400).json({
         success: false,
-        error: "Either 'email' or 'role' ('admin' | 'user') must be provided",
+        error: "Email and password are required",
       });
       return;
     }
 
-    // Determine identity and role securely
-    const sanitizedEmail = (email || (role === "admin" ? "admin@cargorule.ai" : "ops@cargorule.ai")).trim().toLowerCase();
-
-    // Determine role based on verified account identity, not arbitrary client request
-    let userRole: "admin" | "user" = "user";
-    let userId = `user-${sanitizedEmail.replace(/[^a-zA-Z0-9]/g, "-")}`;
-
-    if (sanitizedEmail === "admin@cargorule.ai" || role === "admin") {
-      // In production, verify credentials
-      if (password && password !== "admin123" && process.env.NODE_ENV === "production") {
-        res.status(401).json({ success: false, error: "Invalid credentials" });
-        return;
-      }
-      userRole = "admin";
-      userId = "admin-user-001";
+    const authUser = AuthService.authenticate(email, password);
+    if (!authUser) {
+      res.status(401).json({
+        success: false,
+        error: "Invalid email or password",
+      });
+      return;
     }
 
-    const token = AuthService.generateToken({
-      userId,
-      email: sanitizedEmail,
-      role: userRole,
-    });
+    const token = AuthService.generateToken(authUser);
+    const stored = AuthService.findUserById(authUser.userId);
 
     res.status(200).json({
       success: true,
       token,
       user: {
-        userId,
-        email: sanitizedEmail,
-        role: userRole,
+        userId: authUser.userId,
+        name: stored?.name || authUser.email.split("@")[0],
+        email: authUser.email,
+        role: authUser.role,
       },
     });
   }
@@ -65,18 +54,25 @@ export class AuthController {
       return;
     }
 
+    const stored = AuthService.findUserById(req.user.userId);
+
     res.status(200).json({
       success: true,
-      user: req.user,
+      user: {
+        userId: req.user.userId,
+        name: stored?.name || req.user.email.split("@")[0],
+        email: req.user.email,
+        role: req.user.role,
+      },
     });
   }
 
   /**
    * POST /api/auth/register
-   * Registers a new user and issues a signed Bearer JWT token.
+   * Registers a new user with salted password hash and issues a signed Bearer JWT token.
    */
   public static register(req: Request, res: Response): void {
-    const { name, email, password, role } = req.body || {};
+    const { name, email, password } = req.body || {};
 
     if (!email || typeof email !== "string" || !email.includes("@")) {
       res.status(400).json({
@@ -94,28 +90,39 @@ export class AuthController {
       return;
     }
 
-    const sanitizedEmail = email.trim().toLowerCase();
+    try {
+      const sanitizedEmail = email.trim().toLowerCase();
+      const adminEmail = (process.env.ADMIN_EMAIL || "admin@cargorule.ai").toLowerCase().trim();
+      const assignedRole: "admin" | "user" = sanitizedEmail === adminEmail ? "admin" : "user";
 
-    // Security: New public registrations are strictly assigned standard "user" role.
-    // Admin privileges cannot be self-claimed on signup.
-    const assignedRole: "admin" | "user" = sanitizedEmail === "admin@cargorule.ai" ? "admin" : "user";
-    const userId = `user-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-
-    const token = AuthService.generateToken({
-      userId,
-      email: sanitizedEmail,
-      role: assignedRole,
-    });
-
-    res.status(201).json({
-      success: true,
-      token,
-      user: {
-        userId,
+      const newUser = AuthService.registerUser({
         name: name?.trim() || sanitizedEmail.split("@")[0],
         email: sanitizedEmail,
+        password: password.trim(),
         role: assignedRole,
-      },
-    });
+      });
+
+      const token = AuthService.generateToken({
+        userId: newUser.id,
+        email: newUser.email,
+        role: newUser.role,
+      });
+
+      res.status(201).json({
+        success: true,
+        token,
+        user: {
+          userId: newUser.id,
+          name: newUser.name,
+          email: newUser.email,
+          role: newUser.role,
+        },
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Registration failed",
+      });
+    }
   }
 }

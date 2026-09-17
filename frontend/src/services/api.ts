@@ -15,7 +15,7 @@ const API_BASE_URL =
  * Returns security and authentication headers for frontend requests.
  * Uses sessionStorage/localStorage token if available, or admin demo token for admin operations.
  */
-function getAuthHeaders(isAdmin = false): Record<string, string> {
+function getAuthHeaders(_isAdmin = false): Record<string, string> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
@@ -24,12 +24,7 @@ function getAuthHeaders(isAdmin = false): Record<string, string> {
     const storedToken = localStorage.getItem('cargorule_auth_token') || sessionStorage.getItem('cargorule_auth_token');
     if (storedToken) {
       headers['Authorization'] = `Bearer ${storedToken}`;
-    } else {
-      // Default demo role header for seamless hackathon / development experience
-      headers['X-Demo-Role'] = isAdmin ? 'admin' : 'user';
     }
-  } else {
-    headers['X-Demo-Role'] = isAdmin ? 'admin' : 'user';
   }
 
   return headers;
@@ -464,6 +459,8 @@ export async function getAuthMe(): Promise<{ userId: string; email: string; role
     return null;
   }
 }
+
+/**
  * Alias for fetching admin dashboard stats.
  */
 export async function getAdminDashboard(): Promise<AdminDashboardStats | null> {
