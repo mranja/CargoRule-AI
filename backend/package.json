@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "node node_modules\\ts-node\\dist\\bin.js src\\server.ts",
-    "start": "node node_modules\\ts-node\\dist\\bin.js src\\server.ts",
-    "build": "node node_modules\\typescript\\bin\\tsc --noEmit",
+    "dev": "node node_modules/ts-node/dist/bin.js src/server.ts",
+    "start": "node node_modules/ts-node/dist/bin.js src/server.ts",
+    "build": "node node_modules/typescript/bin/tsc --noEmit",
     "test": "node node_modules\\ts-node\\dist\\bin.js scripts\\run-all-tests.ts",
     "test:extraction": "node node_modules\\ts-node\\dist\\bin.js scripts\\test-extraction.ts",
     "test:pipeline": "node node_modules\\ts-node\\dist\\bin.js scripts\\test-pipeline.ts",
