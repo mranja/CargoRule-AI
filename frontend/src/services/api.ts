@@ -459,6 +459,8 @@ export async function getAuthMe(): Promise<{ userId: string; email: string; role
     return null;
   }
 }
+
+/**
  * Alias for fetching admin dashboard stats.
  */
 export async function getAdminDashboard(): Promise<AdminDashboardStats | null> {
