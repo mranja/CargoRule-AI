@@ -9,9 +9,12 @@ import { DocumentManagementTable } from '@/components/documents/DocumentManageme
 import { getDocuments } from '@/services/api';
 import { DocumentRecord } from '@/types';
 import { IconUpload } from '@/components/common/Icons';
+import { useAuth } from '@/context/AuthContext';
+import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 
 export default function AdminDocumentsPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -29,6 +32,10 @@ export default function AdminDocumentsPage() {
   useEffect(() => {
     let mounted = true;
     async function initLoad() {
+      if (user && user.role !== 'admin') {
+        setIsLoading(false);
+        return;
+      }
       try {
         const docs = await getDocuments();
         if (mounted) {
@@ -44,7 +51,15 @@ export default function AdminDocumentsPage() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [user]);
+
+  if (user && user.role !== 'admin') {
+    return (
+      <DashboardLayout>
+        <AdminAccessDenied />
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>

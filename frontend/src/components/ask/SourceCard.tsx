@@ -3,6 +3,9 @@ import { SourceCitation } from '@/types';
 import { Badge } from '../ui/Badge';
 import { IconDocuments } from '../common/Icons';
 
+import { getCountryDisplayName } from '@/utils/tradeConstants';
+import { CountryFlag } from '../common/CountryFlag';
+
 export interface SourceCardProps {
   source: SourceCitation;
 }
@@ -22,8 +25,9 @@ export const SourceCard: React.FC<SourceCardProps> = ({ source }) => {
 
         <div className="flex items-center gap-1.5 shrink-0">
           {source.country && (
-            <Badge variant="default" size="sm">
-              {source.country}
+            <Badge variant="default" size="sm" className="inline-flex items-center gap-1">
+              <CountryFlag country={source.country} size="xs" />
+              <span>{getCountryDisplayName(source.country)}</span>
             </Badge>
           )}
           {source.carrier && (

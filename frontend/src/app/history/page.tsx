@@ -4,19 +4,20 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { RecentQueriesSection } from '@/components/dashboard/RecentQueriesSection';
-import { getQueryHistory } from '@/services/api';
+import { getQueryHistory, deleteQueryRecord } from '@/services/api';
 import { QueryRecord } from '@/types';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { SourceCard } from '@/components/ask/SourceCard';
-import { IconAsk, IconDocuments } from '@/components/common/Icons';
+import { IconAsk, IconDocuments, IconTrash } from '@/components/common/Icons';
 
 export default function HistoryPage() {
   const router = useRouter();
   const [queries, setQueries] = useState<QueryRecord[]>([]);
   const [selectedQuery, setSelectedQuery] = useState<QueryRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -47,6 +48,23 @@ export default function HistoryPage() {
     if (q.carrier && q.carrier !== '--') params.set('carrier', q.carrier);
     if (q.country && q.country !== '--') params.set('country', q.country);
     router.push(`/ask?${params.toString()}`);
+  };
+
+  const handleDeleteQuery = async (id: string) => {
+    if (!id || isDeleting) return;
+    setIsDeleting(true);
+    try {
+      const ok = await deleteQueryRecord(id);
+      if (ok) {
+        const updated = queries.filter((q) => q.id !== id);
+        setQueries(updated);
+        setSelectedQuery(updated.length > 0 ? updated[0] : null);
+      }
+    } catch (err) {
+      console.warn('Failed to delete query:', err);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -103,6 +121,16 @@ export default function HistoryPage() {
                   onClick={() => handleAskAgain(selectedQuery)}
                 >
                   Ask Again
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leftIcon={<IconTrash size={14} />}
+                  onClick={() => handleDeleteQuery(selectedQuery.id)}
+                  isLoading={isDeleting}
+                  className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"
+                >
+                  Delete
                 </Button>
               </div>
             </div>

@@ -17,6 +17,8 @@ import {
   IconSearch,
   IconTrash,
 } from '../common/Icons';
+import { getCountryDisplayName } from '@/utils/tradeConstants';
+import { CountryFlag } from '../common/CountryFlag';
 
 export interface DocumentManagementTableProps {
   documents: DocumentRecord[];
@@ -251,7 +253,12 @@ export const DocumentManagementTable: React.FC<DocumentManagementTableProps> = (
                         {doc.type}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3.5 font-medium">{doc.country || 'Global'}</td>
+                    <td className="px-4 py-3.5 font-medium whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1.5">
+                        <CountryFlag country={doc.country} size="sm" />
+                        <span>{getCountryDisplayName(doc.country)}</span>
+                      </span>
+                    </td>
                     <td className="px-4 py-3.5 font-medium">{doc.carrier || 'All'}</td>
                     <td className="px-4 py-3.5 font-mono text-[11px]">{doc.version || '1.0'}</td>
                     <td className="px-4 py-3.5">

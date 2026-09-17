@@ -38,6 +38,8 @@ export const IconHistory: React.FC<IconProps> = ({ size = 20, className = '', ..
   </svg>
 );
 
+export const IconClock = IconHistory;
+
 export const IconGlobe: React.FC<IconProps> = ({ size = 20, className = '', ...props }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>
     <circle cx="12" cy="12" r="10" />
@@ -60,6 +62,8 @@ export const IconAdmin: React.FC<IconProps> = ({ size = 20, className = '', ...p
     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
   </svg>
 );
+
+export const IconShieldCheck = IconAdmin;
 
 export const IconUpload: React.FC<IconProps> = ({ size = 20, className = '', ...props }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>
@@ -271,6 +275,13 @@ export const IconThumbsUp: React.FC<IconProps> = ({ size = 20, className = '', .
 export const IconThumbsDown: React.FC<IconProps> = ({ size = 20, className = '', ...props }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>
     <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3" />
+  </svg>
+);
+
+export const IconEye: React.FC<IconProps> = ({ size = 20, className = '', ...props }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+    <circle cx="12" cy="12" r="3" />
   </svg>
 );
 

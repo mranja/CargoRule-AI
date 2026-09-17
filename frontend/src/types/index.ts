@@ -39,6 +39,21 @@ export interface QueryRecord {
   errorMessage?: string;
 }
 
+export interface DocumentChunkRecord {
+  id: string;
+  documentId: string;
+  content: string;
+  chunkIndex: number;
+  metadata?: {
+    documentName?: string;
+    country?: string;
+    carrier?: string;
+    documentType?: string;
+    section?: string;
+    chunkIndex?: number;
+  };
+}
+
 export interface DocumentRecord {
   id: string;
   title: string;
@@ -54,6 +69,9 @@ export interface DocumentRecord {
   chunkCount?: number;
   fileName?: string;
   fileSize?: number;
+  summary?: string;
+  keyRequirements?: string[];
+  chunks?: DocumentChunkRecord[];
   errorMessage?: string;
 }
 

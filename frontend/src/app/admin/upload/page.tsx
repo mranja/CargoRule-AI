@@ -22,6 +22,8 @@ import { ProcessingStatusStepper } from '@/components/documents/ProcessingStatus
 import { IconUpload, IconSparkles } from '@/components/common/Icons';
 import { useRouter } from 'next/navigation';
 import { uploadDocument } from '@/services/api';
+import { useAuth } from '@/context/AuthContext';
+import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 
 const initialMetadata: UploadMetadata = {
   documentName: '',
@@ -38,6 +40,7 @@ const ACCEPTED_EXTENSIONS = ['pdf', 'docx', 'txt'];
 
 export default function UploadPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [metadata, setMetadata] = useState<UploadMetadata>(initialMetadata);
   const [errors, setErrors] = useState<UploadFormErrors>({});
@@ -45,6 +48,14 @@ export default function UploadPage() {
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [activeProcessingStatus, setActiveProcessingStatus] =
     useState<DocumentProcessingStatus | null>(null);
+
+  if (user && user.role !== 'admin') {
+    return (
+      <DashboardLayout>
+        <AdminAccessDenied />
+      </DashboardLayout>
+    );
+  }
 
   const handleFileSelect = (file: File) => {
     const ext = file.name.split('.').pop()?.toLowerCase() || '';
