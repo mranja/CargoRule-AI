@@ -4,7 +4,7 @@ CargoRule AI is an AI-powered logistics compliance assistant that helps operatio
 
 The application uses Retrieval-Augmented Generation (RAG) to retrieve relevant information from approved logistics documents and generate source-backed answers using an OpenAI-compatible API.
 
-## Problem Statement
+## Problem Statement for this project
 
 Logistics companies store large amounts of:
 
