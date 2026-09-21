@@ -52,8 +52,9 @@ app.get("/health", (_req, res) => {
   res.status(200).json({ status: "ok", service: "cargorule-backend" });
 });
 
-// Mount all API routes under /api
+// Mount all API routes under /api and also / as fallback
 app.use("/api", apiRouter);
+app.use("/", apiRouter);
 
 // Global error handling middleware
 app.use(errorHandler);

@@ -8,8 +8,13 @@ import {
   UploadMetadata,
 } from '@/types';
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const rawApiUrl = (
+  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
+).trim();
+const cleanApiUrl = rawApiUrl.replace(/\/+$/, '');
+const API_BASE_URL = cleanApiUrl.endsWith('/api')
+  ? cleanApiUrl
+  : `${cleanApiUrl}/api`;
 
 /**
  * Returns security and authentication headers for frontend requests.
