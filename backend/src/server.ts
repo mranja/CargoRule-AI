@@ -11,27 +11,37 @@ export const app = express();
 app.use(securityHeaders);
 
 // 2. Strict CORS Configuration
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001")
+const configuredOrigins = (process.env.ALLOWED_ORIGINS || "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,https://cargo-rule-ai.vercel.app")
   .split(",")
   .map((o) => o.trim())
   .filter(Boolean);
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, server-to-server)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      return callback(new Error(`CORS origin '${origin}' not allowed by policy`));
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Api-Key", "X-Demo-Role", "X-User-Id"],
-    maxAge: 86400, // 24 hours
-  })
-);
+export function isOriginAllowed(origin?: string): boolean {
+  // Allow requests with no origin (like mobile apps, curl, server-to-server)
+  if (!origin) return true;
+  if (configuredOrigins.includes("*") || configuredOrigins.includes(origin)) return true;
+  // Automatically allow localhost and 127.0.0.1 with any port
+  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return true;
+  // Automatically allow Vercel production and preview domains
+  if (origin === "https://cargo-rule-ai.vercel.app" || /^https:\/\/.*\.vercel\.app$/.test(origin)) return true;
+  return false;
+}
+
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    if (isOriginAllowed(origin)) {
+      return callback(null, true);
+    }
+    return callback(null, false);
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Api-Key", "X-Demo-Role", "X-User-Id"],
+  maxAge: 86400, // 24 hours
+};
+
+app.use(cors(corsOptions));
+
 
 // 3. Global Request Limiter & JSON Body Parser
 app.use(globalApiLimiter);
