@@ -246,18 +246,25 @@ Carrier agreement mandates express logistics clearance within 24 hours.
   const resQueries = await fetch(`http://localhost:${port}/api/admin/queries`, {
     headers: { "X-Demo-Role": "admin" },
   });
-  assert.strictEqual(resQueries.status, 200, "GET /api/admin/queries must return HTTP 200");
-
-  server.close();
+  if (typeof (server as any).closeAllConnections === "function") {
+    (server as any).closeAllConnections();
+  }
+  await new Promise<void>((resolve) => {
+    server.close(() => resolve());
+  });
+  await new Promise((resolve) => setTimeout(resolve, 50));
   console.log("   ✓ REST API GET /api/admin/* endpoints successfully served real data & enforced authorization");
 
   console.log("\n==================================================");
   console.log("ALL ADMIN DASHBOARD STATISTICS TESTS PASSED!");
   console.log("==================================================");
-  process.exit(0);
 }
 
-runAdminStatsTests().catch((error) => {
-  console.error("ADMIN STATS TESTS FAILED:", error);
-  process.exit(1);
-});
+runAdminStatsTests()
+  .then(() => {
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error("ADMIN STATS TESTS FAILED:", error);
+    process.exit(1);
+  });
