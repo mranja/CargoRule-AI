@@ -75,34 +75,6 @@ export default function AdminPage() {
       </DashboardLayout>
     );
   }
-    let mounted = true;
-    const fetchStats = async () => {
-      setError(null);
-      setIsAccessDenied(false);
-      try {
-        const data = await getAdminStats();
-        if (mounted && data) {
-          setStats(data);
-        }
-      } catch (err) {
-        if (mounted) {
-          if (err instanceof Error && err.message.startsWith('ACCESS_DENIED:')) {
-            setIsAccessDenied(true);
-          } else {
-            setError(err instanceof Error ? err.message : 'Failed to load statistics');
-          }
-        }
-      } finally {
-        if (mounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-    fetchStats();
-    return () => {
-      mounted = false;
-    };
-  }, []);
 
   const handleSwitchAdminRole = () => {
     if (typeof window !== 'undefined') {
